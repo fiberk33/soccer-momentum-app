@@ -1,12 +1,59 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MomentumTrack</title>
-  </head>
-  <body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Momentum Tracker</title>
+    <!-- React & Babel CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white">
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function MomentumTracker() {
+            const [matches, setMatches] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                // This connects to your Render Backend from file 83099443-90a3-4a2c-a1bf-96a6182033cd
+                fetch('https://soccer-momentum-app-1.onrender.com/api/live')
+                    .then(res => res.json())
+                    .then(data => {
+                        setMatches(data.matches || []);
+                        setLoading(false);
+                    })
+                    .catch(err => console.error("Error fetching matches:", err));
+            }, []);
+
+            return (
+                <div class="p-4 max-w-md mx-auto">
+                    <h1 class="text-2xl font-bold mb-4 text-center">Live Momentum Heat Map</h1>
+                    {loading ? <p class="text-center">Scanning live games...</p> : (
+                        matches.map(match => (
+                            <div key={match.fixture_id} class="bg-gray-800 p-4 rounded-lg mb-3 border-l-4 border-orange-500">
+                                <div class="flex justify-between font-bold">
+                                    <span>{match.home.name} vs {match.away.name}</span>
+                                    <span class="text-orange-400">{match.heat_score}🔥</span>
+                                </div>
+                                <div class="text-sm text-gray-400">Minute: {match.minute}' | Score: {match.home.goals}-{match.away.goals}</div>
+                                <div class="mt-2 text-xs bg-gray-700 p-2 rounded italic">
+                                    {match.alerts || "High pressure detected in final third."}
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MomentumTracker />);
+    </script>
+</body>
 </html>
