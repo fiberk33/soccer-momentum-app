@@ -1,109 +1,18 @@
 {
-  "_comment": "Sample API response from GET /api/live",
-  "source": "api-football",
-  "count": 2,
-  "generated_at": "2026-05-12T20:14:00Z",
-  "matches": [
-    {
-      "fixture_id": 1058432,
-      "league": "Premier League",
-      "country": "England",
-      "minute": 87,
-      "status": "2H",
-
-      "home": {
-        "name": "Manchester City",
-        "logo": "https://media.api-sports.io/football/teams/50.png",
-        "goals": 1,
-        "possession": 68,
-        "shots_on_target": 9,
-        "corners": 7,
-        "dangerous_attacks": 42,
-        "yellow_cards": 2,
-        "red_cards": 0,
-        "favorite": true
-      },
-
-      "away": {
-        "name": "Arsenal",
-        "logo": "https://media.api-sports.io/football/teams/42.png",
-        "goals": 1,
-        "possession": 32,
-        "shots_on_target": 3,
-        "corners": 2,
-        "dangerous_attacks": 18,
-        "yellow_cards": 1,
-        "red_cards": 1,
-        "favorite": false
-      },
-
-      "dangerous_attacks_per_min": 2.41,
-      "timestamp": "2026-05-12T20:14:00Z",
-
-      "heat_score": 91,
-      "alert_level": "🔥 EXTREME",
-
-      "breakdown": {
-        "high_pressure": 35,
-        "red_card_multiplier": 20,
-        "vila_effect": 31,
-        "triggers": [
-          "Dominant possession: Manchester City 68%",
-          "High attack rate: 2.41 dangerous attacks/min",
-          "⚡ High Pressure Zone activated",
-          "🟥 Red Card Multiplier: Arsenal (favourite) down a man",
-          "⏱️ Vila Effect (2nd half): 3′ remaining"
-        ]
-      }
-    },
-    {
-      "fixture_id": 1058499,
-      "league": "La Liga",
-      "country": "Spain",
-      "minute": 38,
-      "status": "1H",
-
-      "home": {
-        "name": "Real Madrid",
-        "logo": "https://media.api-sports.io/football/teams/541.png",
-        "goals": 0,
-        "possession": 52,
-        "shots_on_target": 4,
-        "corners": 4,
-        "dangerous_attacks": 24,
-        "yellow_cards": 1,
-        "red_cards": 0,
-        "favorite": true
-      },
-
-      "away": {
-        "name": "Barcelona",
-        "logo": "https://media.api-sports.io/football/teams/529.png",
-        "goals": 0,
-        "possession": 48,
-        "shots_on_target": 5,
-        "corners": 3,
-        "dangerous_attacks": 22,
-        "yellow_cards": 0,
-        "red_cards": 0,
-        "favorite": false
-      },
-
-      "dangerous_attacks_per_min": 1.68,
-      "timestamp": "2026-05-12T20:14:00Z",
-
-      "heat_score": 67,
-      "alert_level": "🟠 HIGH",
-
-      "breakdown": {
-        "high_pressure": 18,
-        "red_card_multiplier": 0,
-        "vila_effect": 22,
-        "triggers": [
-          "High attack rate: 1.68 dangerous attacks/min",
-          "⏱️ Vila Effect (1st half): 7′ remaining"
-        ]
-      }
-    }
-  ]
+  "name": "momentum-track",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.1"
+  }
 }
