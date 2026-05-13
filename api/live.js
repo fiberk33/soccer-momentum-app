@@ -1,5 +1,5 @@
-// api/live.js — fetches all live fixtures + stats in parallel batches
-// Handles Vercel 10s timeout by batching stat requests
+// api/live.js — single API call with statistics included inline
+// API-Sports Pro supports ?statistics=true on the fixtures endpoint
 
 const BASE_URL = "https://v3.football.api-sports.io";
 
@@ -12,28 +12,42 @@ function parseStat(stats, teamIdx, name, fallback = 0) {
   } catch { return fallback; }
 }
 
-function calcHeatScore(home, away, minute, dapm) {
+function calcHeatScore(home, away, minute) {
   let score = 0;
   const triggers = [];
   let high_pressure = 0, red_card_multiplier = 0, vila_effect = 0;
+  const hasStats = home.possession > 0 || home.shots_on_target > 0 || home.dangerous_attacks > 0;
 
-  // A) High Pressure
-  const dominant = home.possession > away.possession ? home : away;
-  let posScore = 0, atkScore = 0;
-  if (dominant.possession >= 65) {
-    posScore = Math.min(20, ((dominant.possession - 65) / 15) * 20);
-    triggers.push(`Dominant possession: ${dominant.name} ${dominant.possession}%`);
-  }
-  if (dapm >= 1.5) {
-    atkScore = Math.min(15, ((dapm - 1.5) / 2.5) * 15);
-    triggers.push(`High attack rate: ${dapm.toFixed(2)}/min`);
-  }
-  if (posScore > 0 && atkScore > 0) triggers.push("⚡ High Pressure Zone activated");
-  const sotBonus = Math.min(10, (home.shots_on_target + away.shots_on_target) * 1.2);
-  high_pressure = Math.round(posScore + atkScore);
-  score += high_pressure + sotBonus;
+  if (hasStats) {
+    // Full Heat Score with real stats
+    const dominant = home.possession > away.possession ? home : away;
+    let posScore = 0, atkScore = 0;
+    const dapm = (home.dangerous_attacks + away.dangerous_attacks) / Math.max(minute, 1);
 
-  // B) Red Card Multiplier
+    if (dominant.possession >= 65) {
+      posScore = Math.min(20, ((dominant.possession - 65) / 15) * 20);
+      triggers.push(`Dominant possession: ${dominant.name} ${dominant.possession}%`);
+    }
+    if (dapm >= 1.5) {
+      atkScore = Math.min(15, ((dapm - 1.5) / 2.5) * 15);
+      triggers.push(`High attack rate: ${dapm.toFixed(2)}/min`);
+    }
+    if (posScore > 0 && atkScore > 0) triggers.push("⚡ High Pressure Zone activated");
+    const sotBonus = Math.min(10, (home.shots_on_target + away.shots_on_target) * 1.2);
+    high_pressure = Math.round(posScore + atkScore);
+    score += high_pressure + sotBonus;
+  } else {
+    // Score-based heat when stats unavailable
+    const totalGoals = home.goals + away.goals;
+    const diff = Math.abs(home.goals - away.goals);
+    if (totalGoals >= 3) { score += 20; triggers.push(`🔥 High scoring: ${totalGoals} goals`); }
+    else if (totalGoals >= 1) { score += 8; }
+    if (diff === 0 && minute > 60) { score += 15; triggers.push("⚡ Draw in 2nd half"); }
+    else if (diff === 0) { score += 8; triggers.push("⚡ Level game"); }
+    else if (diff === 1 && minute > 70) { score += 10; triggers.push("⚡ 1 goal game — late pressure"); }
+  }
+
+  // Red Card Multiplier (works with or without full stats)
   const checkRC = (atk, def, ag, dg) => {
     if (def.red_cards >= 1 && atk.favorite === false && ag >= dg)
       return Math.min(30, 20 + def.red_cards * 10);
@@ -48,12 +62,13 @@ function calcHeatScore(home, away, minute, dapm) {
     triggers.push("🟥 Red Card Multiplier active");
   }
 
-  // C) Vila Effect
+  // Vila Effect (works with or without full stats)
   const in1H = minute >= 35 && minute <= 45;
   const in2H = minute >= 80 && minute <= 93;
   if (in1H || in2H) {
     const remaining = in1H ? 45 - minute : 90 - minute;
-    vila_effect = Math.round(Math.min(35, Math.max(0, 10 - remaining) * 2.5 + Math.min(10, (home.corners + away.corners) * 0.8)));
+    const cornerBonus = hasStats ? Math.min(10, (home.corners + away.corners) * 0.8) : 5;
+    vila_effect = Math.round(Math.min(35, Math.max(0, 10 - remaining) * 2.5 + cornerBonus));
     score += vila_effect;
     triggers.push(`⏱️ Vila Effect: ${remaining}′ remaining`);
   }
@@ -62,16 +77,9 @@ function calcHeatScore(home, away, minute, dapm) {
   return {
     heat_score: final,
     alert_level: final >= 80 ? "🔥 EXTREME" : final >= 60 ? "🟠 HIGH" : final >= 40 ? "🟡 MEDIUM" : "🟢 LOW",
+    has_full_stats: hasStats,
     breakdown: { high_pressure, red_card_multiplier, vila_effect, triggers },
   };
-}
-
-async function fetchStatsSafe(fid, headers) {
-  try {
-    const r = await fetch(`${BASE_URL}/fixtures/statistics?fixture=${fid}`, { headers });
-    const d = await r.json();
-    return d.response || [];
-  } catch { return []; }
 }
 
 export default async function handler(req, res) {
@@ -87,8 +95,12 @@ export default async function handler(req, res) {
   const headers = { "x-apisports-key": apiKey };
 
   try {
-    // 1. Get all live fixtures
-    const fixtRes = await fetch(`${BASE_URL}/fixtures?live=all`, { headers });
+    // Single call — statistics=true includes stats inline on Pro plan
+    const fixtRes = await fetch(
+      `${BASE_URL}/fixtures?live=all&statistics=true`,
+      { headers }
+    );
+
     if (!fixtRes.ok) {
       const text = await fixtRes.text();
       return res.status(502).json({ error: `API error: ${fixtRes.status}`, detail: text });
@@ -101,49 +113,16 @@ export default async function handler(req, res) {
     }
 
     const fixtures = fixtData.response || [];
-    const totalLive = fixtures.length;
 
     if (fixtures.length === 0) {
       return res.status(200).json({ source: "api-sports-pro", count: 0, total_live: 0, matches: [] });
     }
 
-    // 2. Fetch stats in parallel batches of 5 (stay within timeout)
-    // Prioritise matches in Vila window and late games first
-    const sorted = [...fixtures].sort((a, b) => {
-      const aMin = a.fixture.status.elapsed || 0;
-      const bMin = b.fixture.status.elapsed || 0;
-      const aVila = (aMin >= 35 && aMin <= 45) || (aMin >= 80 && aMin <= 93);
-      const bVila = (bMin >= 35 && bMin <= 45) || (bMin >= 80 && bMin <= 93);
-      if (aVila && !bVila) return -1;
-      if (!aVila && bVila) return 1;
-      return bMin - aMin; // later minute = higher priority
-    });
-
-    // Batch parallel fetches — 3 batches of 5 = 15 fixtures with stats
-    const withStats = sorted.slice(0, 15);
-    const withoutStats = sorted.slice(15); // rest get score-only heat score
-
-    const BATCH_SIZE = 5;
-    const statsMap = {};
-
-    for (let i = 0; i < withStats.length; i += BATCH_SIZE) {
-      const batch = withStats.slice(i, i + BATCH_SIZE);
-      const results = await Promise.all(
-        batch.map(fx => fetchStatsSafe(fx.fixture.id, headers))
-      );
-      batch.forEach((fx, idx) => {
-        statsMap[fx.fixture.id] = results[idx];
-      });
-    }
-
-    // 3. Build match objects
-    const matches = [];
-
-    for (const fx of fixtures) {
-      const fid = fx.fixture.id;
-      const stats = statsMap[fid] || [];
+    const matches = fixtures.map(fx => {
       const minute = fx.fixture.status.elapsed || 0;
-      const hasStats = stats.length > 0;
+
+      // Stats may be inline or need separate fetch
+      const stats = fx.statistics || [];
 
       const home = {
         name: fx.teams.home.name,
@@ -170,58 +149,28 @@ export default async function handler(req, res) {
         favorite: fx.teams.away.winner,
       };
 
-      // For fixtures without stats, use score-based heat
-      if (!hasStats) {
-        const totalGoals = home.goals + away.goals;
-        const diff = Math.abs(home.goals - away.goals);
-        let quickHeat = 0;
-        if (totalGoals >= 3) quickHeat += 20;
-        else if (totalGoals >= 1) quickHeat += 8;
-        if (diff === 0 && minute > 60) quickHeat += 15;
-        else if (diff === 0) quickHeat += 8;
-        if (diff === 1 && minute > 70) quickHeat += 10;
-        const in2H = minute >= 80 && minute <= 93;
-        if (in2H) quickHeat += Math.min(20, (10 - (90 - minute)) * 2);
-        const hs = Math.min(100, Math.max(0, quickHeat));
-        matches.push({
-          fixture_id: fid,
-          league: fx.league.name,
-          country: fx.league.country,
-          minute, status: fx.fixture.status.short,
-          home, away,
-          dangerous_attacks_per_min: 0,
-          has_full_stats: false,
-          odds: null,
-          heat_score: hs,
-          alert_level: hs >= 80 ? "🔥 EXTREME" : hs >= 60 ? "🟠 HIGH" : hs >= 40 ? "🟡 MEDIUM" : "🟢 LOW",
-          breakdown: { high_pressure: 0, red_card_multiplier: 0, vila_effect: 0, triggers: ["Score-based estimate"] },
-        });
-        continue;
-      }
-
       const dapm = +((home.dangerous_attacks + away.dangerous_attacks) / Math.max(minute, 1)).toFixed(2);
-      const heat = calcHeatScore(home, away, minute, dapm);
+      const heat = calcHeatScore(home, away, minute);
 
-      matches.push({
-        fixture_id: fid,
+      return {
+        fixture_id: fx.fixture.id,
         league: fx.league.name,
         country: fx.league.country,
         minute,
         status: fx.fixture.status.short,
         home, away,
         dangerous_attacks_per_min: dapm,
-        has_full_stats: true,
         odds: null,
         ...heat,
-      });
-    }
+      };
+    });
 
     matches.sort((a, b) => b.heat_score - a.heat_score);
 
     return res.status(200).json({
       source: "api-sports-pro",
       count: matches.length,
-      total_live: totalLive,
+      total_live: fixtures.length,
       generated_at: new Date().toISOString(),
       matches,
     });
