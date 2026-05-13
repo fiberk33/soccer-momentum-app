@@ -12,23 +12,21 @@ const DEMO = [
   { fixture_id:1003, league:"Bundesliga", country:"Germany", minute:14, status:"1H", heat_score:18, alert_level:"🟢 LOW", has_full_stats:false, breakdown:{high_pressure:0,red_card_multiplier:0,vila_effect:0,triggers:[]}, home:{name:"Bayern Munich",logo:"",goals:1,possession:0,shots_on_target:0,corners:0,dangerous_attacks:0,yellow_cards:0,red_cards:0}, away:{name:"Dortmund",logo:"",goals:0,possession:0,shots_on_target:0,corners:0,dangerous_attacks:0,yellow_cards:0,red_cards:0}, dangerous_attacks_per_min:0 },
 ];
 
-// Group matches by league
 function groupByLeague(matches) {
   const groups = {};
   matches.forEach(m => {
     const key = `${m.country} — ${m.league}`;
-    if (!groups[key]) groups[key] = { label: key, country: m.country, league: m.league, matches: [] };
+    if (!groups[key]) groups[key] = { label: key, matches: [] };
     groups[key].matches.push(m);
   });
   return Object.values(groups);
 }
 
-// Heat color
 function heatColor(score) {
-  if (score >= 80) return "#ff3b30";
-  if (score >= 60) return "#ff9500";
-  if (score >= 40) return "#ffd60a";
-  return "#4caf50";
+  if (score >= 80) return "#e53935";
+  if (score >= 60) return "#f57c00";
+  if (score >= 40) return "#f9a825";
+  return "#43a047";
 }
 
 // ─── EXPANDED DETAIL ──────────────────────────────────────────────────────────
@@ -37,30 +35,31 @@ function MatchDetail({ m }) {
   const triggers = m.breakdown?.triggers || [];
 
   return (
-    <div style={{ background: "#1a1a1a", padding: "10px 14px 12px", borderTop: "1px solid #2a2a2a" }}>
+    <div style={{ background: "#f9f9f9", padding: "12px 16px 14px", borderTop: "1px solid #eee" }}>
+
       {/* Heat Score bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-        <div style={{ fontSize: 11, color: "#555", fontFamily: "monospace", minWidth: 70 }}>HEAT SCORE</div>
-        <div style={{ flex: 1, height: 6, background: "#2a2a2a", borderRadius: 3, overflow: "hidden" }}>
-          <div style={{ width: `${m.heat_score}%`, height: "100%", background: heatColor(m.heat_score), borderRadius: 3, transition: "width .6s ease" }} />
+        <div style={{ fontSize: 11, color: "#aaa", fontFamily: "monospace", minWidth: 75 }}>HEAT SCORE</div>
+        <div style={{ flex: 1, height: 7, background: "#e8e8e8", borderRadius: 4, overflow: "hidden" }}>
+          <div style={{ width: `${m.heat_score}%`, height: "100%", background: heatColor(m.heat_score), borderRadius: 4, transition: "width .6s ease" }} />
         </div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: heatColor(m.heat_score), fontFamily: "monospace", minWidth: 28, textAlign: "right" }}>{m.heat_score}</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: heatColor(m.heat_score), fontFamily: "monospace", minWidth: 28, textAlign: "right" }}>{m.heat_score}</div>
       </div>
 
       {/* Breakdown bars */}
       {m.breakdown && (
-        <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           {[
-            { label: "Pressure", val: m.breakdown.high_pressure, max: 35, color: "#0a84ff" },
-            { label: "Red Card", val: m.breakdown.red_card_multiplier, max: 30, color: "#ff3b30" },
-            { label: "Vila", val: m.breakdown.vila_effect, max: 35, color: "#ffd60a" },
+            { label: "Pressure", val: m.breakdown.high_pressure, max: 35, color: "#1e88e5" },
+            { label: "Red Card", val: m.breakdown.red_card_multiplier, max: 30, color: "#e53935" },
+            { label: "Vila", val: m.breakdown.vila_effect, max: 35, color: "#f9a825" },
           ].map(({ label, val, max, color }) => (
-            <div key={label} style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, color: "#444", fontFamily: "monospace", marginBottom: 3, textAlign: "center" }}>{label}</div>
-              <div style={{ height: 4, background: "#2a2a2a", borderRadius: 2 }}>
+            <div key={label} style={{ flex: 1, background: "#fff", borderRadius: 8, padding: "8px 6px", border: "1px solid #eee", textAlign: "center" }}>
+              <div style={{ fontSize: 9, color: "#bbb", marginBottom: 4 }}>{label}</div>
+              <div style={{ height: 4, background: "#f0f0f0", borderRadius: 2, marginBottom: 4 }}>
                 <div style={{ width: `${(val / max) * 100}%`, height: "100%", background: color, borderRadius: 2 }} />
               </div>
-              <div style={{ fontSize: 9, color, fontFamily: "monospace", textAlign: "center", marginTop: 2 }}>{val}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color }}>{val}<span style={{ color: "#ccc", fontWeight: 400 }}>/{max}</span></div>
             </div>
           ))}
         </div>
@@ -68,7 +67,7 @@ function MatchDetail({ m }) {
 
       {/* Stats grid */}
       {hasStats && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "3px 8px", marginBottom: 10 }}>
+        <div style={{ background: "#fff", borderRadius: 8, border: "1px solid #eee", overflow: "hidden", marginBottom: 10 }}>
           {[
             { label: "Possession", hv: `${m.home.possession}%`, av: `${m.away.possession}%` },
             { label: "Shots on Target", hv: m.home.shots_on_target, av: m.away.shots_on_target },
@@ -76,21 +75,21 @@ function MatchDetail({ m }) {
             { label: "Danger Attacks", hv: m.home.dangerous_attacks, av: m.away.dangerous_attacks },
             { label: "Yellow Cards", hv: m.home.yellow_cards, av: m.away.yellow_cards },
             { label: "Red Cards", hv: m.home.red_cards, av: m.away.red_cards },
-          ].map(({ label, hv, av }) => (
-            <>
-              <div key={`h-${label}`} style={{ fontSize: 11, color: "#ccc", textAlign: "right", fontFamily: "monospace" }}>{hv}</div>
-              <div key={`l-${label}`} style={{ fontSize: 10, color: "#444", textAlign: "center", whiteSpace: "nowrap" }}>{label}</div>
-              <div key={`a-${label}`} style={{ fontSize: 11, color: "#ccc", textAlign: "left", fontFamily: "monospace" }}>{av}</div>
-            </>
+          ].map(({ label, hv, av }, i) => (
+            <div key={label} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", padding: "7px 12px", background: i % 2 === 0 ? "#fff" : "#fafafa", borderBottom: i < 5 ? "1px solid #f0f0f0" : "none" }}>
+              <div style={{ fontSize: 12, color: "#222", textAlign: "right", fontWeight: 600 }}>{hv}</div>
+              <div style={{ fontSize: 11, color: "#aaa", textAlign: "center", padding: "0 12px", whiteSpace: "nowrap" }}>{label}</div>
+              <div style={{ fontSize: 12, color: "#222", textAlign: "left", fontWeight: 600 }}>{av}</div>
+            </div>
           ))}
         </div>
       )}
 
       {/* Triggers */}
       {triggers.length > 0 && (
-        <div style={{ borderTop: "1px solid #222", paddingTop: 8 }}>
+        <div style={{ background: "#fff", borderRadius: 8, border: "1px solid #eee", padding: "8px 12px" }}>
           {triggers.map((t, i) => (
-            <div key={i} style={{ fontSize: 10, color: "#666", fontFamily: "monospace", marginBottom: 3 }}>{t}</div>
+            <div key={i} style={{ fontSize: 11, color: "#888", marginBottom: i < triggers.length - 1 ? 4 : 0 }}>{t}</div>
           ))}
         </div>
       )}
@@ -98,58 +97,83 @@ function MatchDetail({ m }) {
   );
 }
 
-// ─── SINGLE MATCH ROW ─────────────────────────────────────────────────────────
+// ─── MATCH ROW ────────────────────────────────────────────────────────────────
 function MatchRow({ m, expanded, onToggle, isFav, onFavToggle }) {
   const s = m.heat_score;
   const color = heatColor(s);
   const isVila = (m.minute >= 35 && m.minute <= 45) || (m.minute >= 80 && m.minute <= 93);
+  const homeWin = m.home.goals > m.away.goals;
+  const awayWin = m.away.goals > m.home.goals;
 
   return (
-    <div style={{ borderBottom: "1px solid #1e1e1e" }}>
-      <div onClick={onToggle} style={{ display: "flex", alignItems: "center", padding: "10px 14px", cursor: "pointer", background: expanded ? "#161616" : "#111", transition: "background .15s" }}>
+    <div style={{ borderBottom: "1px solid #f0f0f0" }}>
+      <div onClick={onToggle} style={{
+        display: "flex", alignItems: "center", padding: "10px 14px",
+        cursor: "pointer", background: expanded ? "#fafafa" : "#fff",
+        transition: "background .15s",
+      }}>
 
         {/* Minute */}
-        <div style={{ width: 42, flexShrink: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#e53935", fontFamily: "monospace", lineHeight: 1 }}>
+        <div style={{ width: 44, flexShrink: 0, textAlign: "center" }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#e53935", fontFamily: "monospace", lineHeight: 1.2 }}>
             {m.minute}′
-            {isVila && <span style={{ fontSize: 8, display: "block", color: "#ffd60a", marginTop: 1 }}>VILA</span>}
           </div>
+          {isVila && (
+            <div style={{ fontSize: 8, color: "#f9a825", fontWeight: 700, marginTop: 2 }}>VILA</div>
+          )}
         </div>
 
-        {/* Teams + Score */}
+        {/* Divider */}
+        <div style={{ width: 1, height: 36, background: "#f0f0f0", marginRight: 12, flexShrink: 0 }} />
+
+        {/* Teams + Scores */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Home */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-              {m.home.logo && <img src={m.home.logo} width="14" height="14" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />}
-              <span style={{ fontSize: 13, color: m.home.goals > m.away.goals ? "#fff" : "#aaa", fontWeight: m.home.goals > m.away.goals ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0, flex: 1 }}>
+              {m.home.logo
+                ? <img src={m.home.logo} width="16" height="16" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
+                : <div style={{ width: 16, height: 16, background: "#e8e8e8", borderRadius: 2, flexShrink: 0 }} />
+              }
+              <span style={{ fontSize: 13, color: homeWin ? "#111" : "#555", fontWeight: homeWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {m.home.name}
               </span>
-              {m.home.red_cards > 0 && <span style={{ fontSize: 9, background: "#c62828", color: "#fff", borderRadius: 2, padding: "0 3px" }}>RC</span>}
+              {m.home.red_cards > 0 && <span style={{ fontSize: 8, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
             </div>
-            <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: "monospace", marginLeft: 8, flexShrink: 0 }}>{m.home.goals}</span>
+            <span style={{ fontSize: 16, fontWeight: 800, color: "#111", marginLeft: 8, flexShrink: 0, minWidth: 16, textAlign: "right" }}>{m.home.goals}</span>
           </div>
+
           {/* Away */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-              {m.away.logo && <img src={m.away.logo} width="14" height="14" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />}
-              <span style={{ fontSize: 13, color: m.away.goals > m.home.goals ? "#fff" : "#aaa", fontWeight: m.away.goals > m.home.goals ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0, flex: 1 }}>
+              {m.away.logo
+                ? <img src={m.away.logo} width="16" height="16" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
+                : <div style={{ width: 16, height: 16, background: "#e8e8e8", borderRadius: 2, flexShrink: 0 }} />
+              }
+              <span style={{ fontSize: 13, color: awayWin ? "#111" : "#555", fontWeight: awayWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {m.away.name}
               </span>
-              {m.away.red_cards > 0 && <span style={{ fontSize: 9, background: "#c62828", color: "#fff", borderRadius: 2, padding: "0 3px" }}>RC</span>}
+              {m.away.red_cards > 0 && <span style={{ fontSize: 8, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
             </div>
-            <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: "monospace", marginLeft: 8, flexShrink: 0 }}>{m.away.goals}</span>
+            <span style={{ fontSize: 16, fontWeight: 800, color: "#111", marginLeft: 8, flexShrink: 0, minWidth: 16, textAlign: "right" }}>{m.away.goals}</span>
           </div>
         </div>
 
-        {/* Heat + Star */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, marginLeft: 12, flexShrink: 0 }}>
-          {/* Heat badge */}
-          <div style={{ width: 36, height: 36, borderRadius: "50%", border: `2px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center", background: `${color}18` }}>
+        {/* Heat ring + star */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginLeft: 14, flexShrink: 0 }}>
+          <div style={{
+            width: 38, height: 38, borderRadius: "50%",
+            border: `2.5px solid ${color}`,
+            background: `${color}12`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
             <span style={{ fontSize: 11, fontWeight: 800, color, fontFamily: "monospace" }}>{s}</span>
           </div>
-          {/* Star */}
-          <button onClick={e => { e.stopPropagation(); onFavToggle(m.fixture_id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: isFav ? "#ffd60a" : "#333", padding: 0, lineHeight: 1 }}>★</button>
+          <button onClick={e => { e.stopPropagation(); onFavToggle(m.fixture_id); }} style={{
+            background: "none", border: "none", cursor: "pointer",
+            fontSize: 14, color: isFav ? "#f9a825" : "#ccc",
+            padding: 0, lineHeight: 1,
+          }}>★</button>
         </div>
       </div>
 
@@ -158,14 +182,22 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle }) {
   );
 }
 
-// ─── LEAGUE GROUP HEADER ──────────────────────────────────────────────────────
+// ─── LEAGUE HEADER ────────────────────────────────────────────────────────────
 function LeagueHeader({ label, topHeat }) {
   const color = heatColor(topHeat);
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 14px", background: "#1a1a1a", borderBottom: "1px solid #222" }}>
-      <span style={{ fontSize: 11, fontWeight: 700, color: "#ccc", letterSpacing: "0.03em" }}>{label}</span>
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "7px 14px", background: "#f5f5f5",
+      borderBottom: "1px solid #e8e8e8", borderTop: "1px solid #e8e8e8",
+    }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: "#666", letterSpacing: "0.03em" }}>{label}</span>
       {topHeat >= 40 && (
-        <span style={{ fontSize: 10, fontWeight: 700, color, fontFamily: "monospace", background: `${color}18`, border: `1px solid ${color}44`, borderRadius: 4, padding: "1px 6px" }}>
+        <span style={{
+          fontSize: 10, fontWeight: 700, color,
+          background: `${color}15`, border: `1px solid ${color}44`,
+          borderRadius: 4, padding: "2px 7px", fontFamily: "monospace",
+        }}>
           {topHeat >= 80 ? "🔥" : topHeat >= 60 ? "🟠" : "🟡"} {topHeat}
         </span>
       )}
@@ -173,27 +205,33 @@ function LeagueHeader({ label, topHeat }) {
   );
 }
 
-// ─── ALERT SETTINGS ───────────────────────────────────────────────────────────
+// ─── ALERT PANEL ──────────────────────────────────────────────────────────────
 function AlertPanel({ threshold, onChange, onClose }) {
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#000000cc", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: 14, padding: 24, width: "100%", maxWidth: 320 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>🔔 Alert Threshold</div>
-        <div style={{ fontSize: 12, color: "#555", fontFamily: "monospace", marginBottom: 20 }}>Notify when Heat Score ≥</div>
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#00000066", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, padding: 24, width: "100%", maxWidth: 320, boxShadow: "0 8px 32px #0002" }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#111", marginBottom: 6 }}>🔔 Alert Threshold</div>
+        <div style={{ fontSize: 12, color: "#aaa", marginBottom: 20 }}>Notify when Heat Score ≥</div>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
           <span style={{ fontSize: 13, color: "#888" }}>Threshold</span>
-          <span style={{ fontSize: 20, fontWeight: 800, fontFamily: "monospace", color: heatColor(threshold) }}>{threshold}</span>
+          <span style={{ fontSize: 22, fontWeight: 800, fontFamily: "monospace", color: heatColor(threshold) }}>{threshold}</span>
         </div>
         <input type="range" min="40" max="95" step="5" value={threshold} onChange={e => onChange(Number(e.target.value))} style={{ width: "100%", accentColor: "#e53935", cursor: "pointer" }} />
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#333", fontFamily: "monospace", marginTop: 4, marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#ccc", marginTop: 4, marginBottom: 16 }}>
           <span>40</span><span>60</span><span>80</span><span>95</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
           {[60, 70, 80].map(v => (
-            <button key={v} onClick={() => onChange(v)} style={{ padding: "8px 0", borderRadius: 8, cursor: "pointer", border: threshold === v ? "1px solid #e5393566" : "1px solid #333", background: threshold === v ? "#e5393518" : "#222", color: threshold === v ? "#e53935" : "#555", fontSize: 13, fontFamily: "monospace", fontWeight: 700 }}>{v}</button>
+            <button key={v} onClick={() => onChange(v)} style={{
+              padding: "10px 0", borderRadius: 8, cursor: "pointer",
+              border: threshold === v ? "2px solid #e53935" : "1px solid #eee",
+              background: threshold === v ? "#fdecea" : "#fafafa",
+              color: threshold === v ? "#e53935" : "#888",
+              fontSize: 14, fontWeight: 700,
+            }}>{v}</button>
           ))}
         </div>
-        <button onClick={onClose} style={{ width: "100%", padding: "10px 0", borderRadius: 8, background: "#222", border: "1px solid #333", color: "#888", fontSize: 13, cursor: "pointer" }}>Done</button>
+        <button onClick={onClose} style={{ width: "100%", padding: "11px 0", borderRadius: 8, background: "#f5f5f5", border: "none", color: "#888", fontSize: 13, cursor: "pointer" }}>Done</button>
       </div>
     </div>
   );
@@ -236,7 +274,7 @@ export default function App() {
           }).sort((a, b) => b.heat_score - a.heat_score)
         );
       }
-    } catch (e) {
+    } catch {
       setIsDemo(true);
       setMatches(DEMO.map(m => ({ ...m, timeline: [m.heat_score] })));
       setError("api_error");
@@ -269,7 +307,6 @@ export default function App() {
 
   const toggleFav = id => setFavourites(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
-  // Filter
   let displayed = [...matches];
   if (showFavsOnly) displayed = displayed.filter(m => favourites.has(m.fixture_id));
   if (filter === "EXTREME") displayed = displayed.filter(m => m.heat_score >= 80);
@@ -280,71 +317,87 @@ export default function App() {
   const extremeCount = matches.filter(m => m.heat_score >= 80).length;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#111", color: "#e0e0e0", fontFamily: "'Segoe UI', system-ui, sans-serif", maxWidth: 480, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: "#f5f5f5", color: "#111", fontFamily: "'Segoe UI', system-ui, sans-serif", maxWidth: 480, margin: "0 auto" }}>
       <style>{`
-        *{box-sizing:border-box;margin:0;padding:0}
-        @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        ::-webkit-scrollbar{width:3px}
-        ::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:2px}
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+        @keyframes spin { to { transform: rotate(360deg) } }
+        body { background: #f5f5f5; }
       `}</style>
 
       {showAlertPanel && <AlertPanel threshold={alertThreshold} onChange={setAlertThreshold} onClose={() => setShowAlertPanel(false)} />}
 
-      {/* ── TOP NAV ── */}
-      <div style={{ position: "sticky", top: 0, zIndex: 100, background: "#1a1a1a", borderBottom: "1px solid #222" }}>
+      {/* ── HEADER ── */}
+      <div style={{ position: "sticky", top: 0, zIndex: 100, background: "#fff", boxShadow: "0 1px 4px #0000000f" }}>
+
         {/* Title bar */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid #f0f0f0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 20 }}>⚽</span>
-            <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>
+            <span style={{ fontSize: 22 }}>⚽</span>
+            <span style={{ fontSize: 17, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
               Momentum<span style={{ color: "#e53935" }}>Track</span>
             </span>
             {extremeCount > 0 && (
-              <span style={{ fontSize: 10, background: "#e53935", color: "#fff", borderRadius: 10, padding: "1px 7px", fontWeight: 700, animation: "blink 1.5s infinite" }}>
+              <span style={{ fontSize: 10, background: "#e53935", color: "#fff", borderRadius: 10, padding: "2px 8px", fontWeight: 700, animation: "blink 1.5s infinite" }}>
                 {extremeCount} 🔥
               </span>
             )}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 10, fontFamily: "monospace", padding: "3px 7px", borderRadius: 4, border: `1px solid ${isDemo ? "#ffd60a44" : "#4caf5044"}`, color: isDemo ? "#ffd60a" : "#4caf50", background: isDemo ? "#ffd60a0a" : "#4caf500a" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{
+              fontSize: 10, fontFamily: "monospace", padding: "3px 8px", borderRadius: 4, fontWeight: 700,
+              border: `1px solid ${isDemo ? "#f9a82544" : "#43a04744"}`,
+              color: isDemo ? "#f9a825" : "#43a047",
+              background: isDemo ? "#fffde7" : "#e8f5e9",
+            }}>
               {isDemo ? "DEMO" : "● LIVE"}
             </span>
-            <button onClick={() => setShowFavsOnly(f => !f)} style={{ background: showFavsOnly ? "#ffd60a22" : "none", border: `1px solid ${showFavsOnly ? "#ffd60a55" : "#333"}`, borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontSize: 13, color: showFavsOnly ? "#ffd60a" : "#555" }}>
-              ★{favourites.size > 0 && ` ${favourites.size}`}
-            </button>
-            <button onClick={() => setShowAlertPanel(true)} style={{ background: "none", border: "1px solid #333", borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontSize: 13, color: "#555" }}>🔔</button>
-            <button onClick={load} style={{ background: "none", border: "1px solid #333", borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontSize: 12, color: countdown < 10 ? "#ff9500" : "#555", fontFamily: "monospace", display: "flex", alignItems: "center", gap: 4 }}>
-              {loading ? <span style={{ display: "inline-block", width: 10, height: 10, border: "2px solid #e53935", borderTopColor: "transparent", borderRadius: "50%", animation: "spin .7s linear infinite" }} /> : "↻"} {countdown}s
+            <button onClick={() => setShowFavsOnly(f => !f)} style={{
+              background: showFavsOnly ? "#fff8e1" : "#fafafa",
+              border: `1px solid ${showFavsOnly ? "#f9a82566" : "#e0e0e0"}`,
+              borderRadius: 6, padding: "4px 9px", cursor: "pointer",
+              fontSize: 13, color: showFavsOnly ? "#f9a825" : "#aaa",
+            }}>★{favourites.size > 0 && ` ${favourites.size}`}</button>
+            <button onClick={() => setShowAlertPanel(true)} style={{ background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 6, padding: "4px 9px", cursor: "pointer", fontSize: 13, color: "#aaa" }}>🔔</button>
+            <button onClick={load} style={{
+              background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 6,
+              padding: "4px 9px", cursor: "pointer", fontSize: 12,
+              color: countdown < 10 ? "#f57c00" : "#aaa",
+              fontFamily: "monospace", display: "flex", alignItems: "center", gap: 4,
+            }}>
+              {loading
+                ? <span style={{ display: "inline-block", width: 10, height: 10, border: "2px solid #e53935", borderTopColor: "transparent", borderRadius: "50%", animation: "spin .7s linear infinite" }} />
+                : "↻"
+              } {countdown}s
             </button>
           </div>
         </div>
 
         {/* Error banners */}
         {error === "no_matches" && (
-          <div style={{ padding: "6px 14px", background: "#2a2000", borderTop: "1px solid #ffd60a22", fontSize: 11, color: "#ffd60a", fontFamily: "monospace" }}>
+          <div style={{ padding: "6px 14px", background: "#fffde7", borderBottom: "1px solid #fff9c4", fontSize: 11, color: "#f57f17" }}>
             ⚽ No live matches right now — showing demo data
           </div>
         )}
         {error === "api_error" && (
-          <div style={{ padding: "6px 14px", background: "#2a0000", borderTop: "1px solid #e5393522", fontSize: 11, color: "#e57373", fontFamily: "monospace" }}>
+          <div style={{ padding: "6px 14px", background: "#ffebee", borderBottom: "1px solid #ffcdd2", fontSize: 11, color: "#c62828" }}>
             ⚠️ API error — check APISPORTS_KEY in Vercel env vars
           </div>
         )}
 
         {/* Filter tabs */}
-        <div style={{ display: "flex", borderTop: "1px solid #222", overflow: "hidden" }}>
+        <div style={{ display: "flex", borderBottom: "1px solid #f0f0f0" }}>
           {[
-            { key: "ALL", label: `Canlı ${matches.length}` },
+            { key: "ALL", label: `Live ${matches.length}` },
             { key: "EXTREME", label: `🔥 ${matches.filter(m => m.heat_score >= 80).length}` },
             { key: "HIGH", label: `🟠 ${matches.filter(m => m.heat_score >= 60 && m.heat_score < 80).length}` },
-            { key: "OTHER", label: "Diğer" },
+            { key: "OTHER", label: "Low" },
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setFilter(key)} style={{
-              flex: 1, padding: "9px 4px", border: "none", cursor: "pointer",
-              fontSize: 11, fontWeight: filter === key ? 700 : 400,
-              background: filter === key ? "#111" : "#1a1a1a",
-              color: filter === key ? "#fff" : "#555",
+              flex: 1, padding: "10px 4px", border: "none", cursor: "pointer",
+              fontSize: 12, fontWeight: filter === key ? 700 : 400,
+              background: "#fff",
+              color: filter === key ? "#e53935" : "#aaa",
               borderBottom: filter === key ? "2px solid #e53935" : "2px solid transparent",
               transition: "all .15s",
             }}>{label}</button>
@@ -354,33 +407,34 @@ export default function App() {
 
       {/* ── MATCH LIST ── */}
       {loading && matches.length === 0 ? (
-        <div style={{ textAlign: "center", color: "#333", padding: "60px 0", fontFamily: "monospace" }}>
-          <div style={{ display: "inline-block", width: 24, height: 24, border: "3px solid #e53935", borderTopColor: "transparent", borderRadius: "50%", animation: "spin .8s linear infinite", marginBottom: 12 }} />
-          <div>Canlı maçlar yükleniyor…</div>
+        <div style={{ textAlign: "center", color: "#ccc", padding: "60px 0" }}>
+          <div style={{ display: "inline-block", width: 28, height: 28, border: "3px solid #e53935", borderTopColor: "transparent", borderRadius: "50%", animation: "spin .8s linear infinite", marginBottom: 12 }} />
+          <div style={{ fontSize: 13 }}>Loading live matches…</div>
         </div>
       ) : displayed.length === 0 ? (
-        <div style={{ textAlign: "center", color: "#333", padding: "60px 0", fontSize: 13 }}>
-          {showFavsOnly ? "Favori maç eklemediniz." : "Bu kategoride maç yok."}
+        <div style={{ textAlign: "center", color: "#ccc", padding: "60px 0", fontSize: 13 }}>
+          {showFavsOnly ? "No favourites yet — tap ★ on a match." : "No matches in this category."}
         </div>
       ) : (
-        groups.map(group => (
-          <div key={group.label}>
-            <LeagueHeader label={group.label} topHeat={Math.max(...group.matches.map(m => m.heat_score))} />
-            {group.matches.map(m => (
-              <MatchRow
-                key={m.fixture_id}
-                m={m}
-                expanded={expanded === m.fixture_id}
-                onToggle={() => setExpanded(expanded === m.fixture_id ? null : m.fixture_id)}
-                isFav={favourites.has(m.fixture_id)}
-                onFavToggle={toggleFav}
-              />
-            ))}
-          </div>
-        ))
+        <div style={{ background: "#fff", marginTop: 8, borderRadius: 0 }}>
+          {groups.map(group => (
+            <div key={group.label}>
+              <LeagueHeader label={group.label} topHeat={Math.max(...group.matches.map(m => m.heat_score))} />
+              {group.matches.map(m => (
+                <MatchRow
+                  key={m.fixture_id}
+                  m={m}
+                  expanded={expanded === m.fixture_id}
+                  onToggle={() => setExpanded(expanded === m.fixture_id ? null : m.fixture_id)}
+                  isFav={favourites.has(m.fixture_id)}
+                  onFavToggle={toggleFav}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       )}
 
-      {/* Bottom padding for mobile */}
       <div style={{ height: 40 }} />
     </div>
   );
