@@ -107,6 +107,107 @@ function MatchDetail({ m }) {
   );
 }
 
+// ─── GOAL PROBABILITY ENGINE (1-10) ──────────────────────────────────────────
+function calcGoalProb(m) {
+  if (m.status === "NS") return { score: 0, label: "—", color: "#ccc", bet: null, reason: "Not started" };
+
+  const minute = m.minute;
+  const bd = m.breakdown || {};
+  const diff = Math.abs(m.home.goals - m.away.goals);
+  const isDraw = diff === 0;
+  const total = m.home.goals + m.away.goals;
+  const dominant = m.home.possession > m.away.possession ? m.home : m.away;
+  const recessive = dominant === m.home ? m.away : m.home;
+
+  // Time remaining to HT or FT
+  const toHT = minute < 45 ? 45 - minute : 0;
+  const toFT = minute < 90 ? 90 - minute : 0;
+  const isFirstHalf = minute <= 45;
+  const timeLeft = isFirstHalf ? toHT : toFT;
+  const halfLabel = isFirstHalf ? "HT" : "FT";
+
+  let prob = 0;
+  let reasons = [];
+  let bestBet = "Over 0.5 Next Goal";
+
+  // 1. TIME FACTOR — less time = lower ceiling, but higher urgency
+  const timeFactor = Math.min(1, timeLeft / 15); // peaks at 15+ mins left
+  const urgencyBonus = timeLeft <= 10 ? 2 : timeLeft <= 5 ? 3 : 0;
+
+  // 2. SCORE STATE — draws are highest value
+  if (isDraw && minute >= 75) { prob += 3.5; reasons.push("Late draw — both desperate"); }
+  else if (isDraw && minute >= 60) { prob += 2.5; reasons.push("Draw 2nd half"); }
+  else if (isDraw && minute >= 35) { prob += 2; reasons.push("Draw end of 1st half"); }
+  else if (isDraw) { prob += 1; }
+  else if (diff === 1 && minute >= 70) { prob += 2; reasons.push("Losing team pushing"); bestBet = `${recessive.goals < dominant.goals ? recessive.name : dominant.name} Next Goal`; }
+  else if (diff === 1) { prob += 1; }
+  else if (diff >= 2) { prob -= 1; } // game over, less pressure
+
+  // 3. VILA WINDOW
+  if (bd.vila_effect >= 20) { prob += 2.5; reasons.push("Vila window active"); }
+  else if (bd.vila_effect > 0) { prob += 1.5; reasons.push("End of half pressure"); }
+
+  // 4. RED CARD — huge signal
+  if (bd.red_card_multiplier > 0) {
+    prob += 2.5;
+    reasons.push("Red card advantage");
+    bestBet = `${dominant.red_cards === 0 ? dominant.name : recessive.name} Next Goal`;
+  }
+
+  // 5. POSSESSION DOMINANCE
+  if (dominant.possession >= 70) { prob += 1.5; reasons.push(`${dominant.name} dominating`); bestBet = `${dominant.name} Next Goal`; }
+  else if (dominant.possession >= 60) { prob += 0.8; }
+
+  // 6. ATTACK RATE
+  if (m.dangerous_attacks_per_min >= 2) { prob += 1.5; reasons.push("Very high attack rate"); }
+  else if (m.dangerous_attacks_per_min >= 1.5) { prob += 1; }
+
+  // 7. SHOTS ON TARGET
+  const sot = m.home.shots_on_target + m.away.shots_on_target;
+  if (sot >= 8) { prob += 1; reasons.push(`${sot} shots on target`); }
+  else if (sot >= 5) { prob += 0.5; }
+
+  // 8. ALREADY HIGH SCORING
+  if (total >= 4) { prob += 1; reasons.push("High scoring game"); }
+  else if (total >= 3) { prob += 0.5; }
+
+  // 9. YELLOW CARD TENSION
+  const yellows = m.home.yellow_cards + m.away.yellow_cards;
+  if (yellows >= 5) { prob += 0.5; reasons.push("Heated game"); }
+
+  // 10. HEAT SCORE BONUS
+  prob += (m.heat_score / 100) * 2;
+
+  // Apply urgency bonus for final minutes
+  prob += urgencyBonus;
+
+  // Early game penalty (before 25 min — too early)
+  if (minute < 25 && !bd.red_card_multiplier) prob *= 0.5;
+
+  // Clamp to 1-10
+  const final = Math.min(10, Math.max(1, Math.round(prob * 10) / 10));
+  const rounded = Math.round(final);
+
+  const color = rounded >= 8 ? "#c62828"
+    : rounded >= 6 ? "#e53935"
+    : rounded >= 5 ? "#f57c00"
+    : rounded >= 3 ? "#f9a825"
+    : "#aaa";
+
+  const label = rounded >= 9 ? "BET NOW" : rounded >= 7 ? "STRONG" : rounded >= 5 ? "FAIR" : rounded >= 3 ? "WEAK" : "SKIP";
+
+  return {
+    score: final,
+    rounded,
+    label,
+    color,
+    bet: bestBet,
+    halfLabel,
+    timeLeft,
+    reasons: reasons.slice(0, 3),
+  };
+}
+
 // ─── MATCH ROW ────────────────────────────────────────────────────────────────
 function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFanduelToggle }) {
   const s = m.heat_score;
@@ -203,7 +304,7 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
         <div style={{ width: 1, alignSelf: "stretch", background: "#f0f0f0", flexShrink: 0 }} />
 
         {/* Signals column — col 2 */}
-        <div style={{ width: 110, flexShrink: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+        <div style={{ width: 95, flexShrink: 0, display: "flex", flexDirection: "column", gap: 3 }}>
           {topSignals.length === 0 ? (
             <div style={{ fontSize: 9, color: "#ccc", fontStyle: "italic", marginTop: 4 }}>No signals</div>
           ) : topSignals.map((sig, i) => (
@@ -217,15 +318,56 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
         {/* Divider */}
         <div style={{ width: 1, alignSelf: "stretch", background: "#f0f0f0", flexShrink: 0 }} />
 
-        {/* Heat + star + FD — col 3 */}
+        {/* Goal Probability — col 3 */}
+        {(() => {
+          const gp = calcGoalProb(m);
+          const bars = [1,2,3,4,5,6,7,8,9,10];
+          return (
+            <div style={{ width: 68, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, paddingTop: 2 }}>
+              {/* Score display */}
+              <div style={{ fontSize: 18, fontWeight: 900, color: gp.color, fontFamily: "monospace", lineHeight: 1 }}>
+                {gp.score > 0 ? gp.score.toFixed(1) : "—"}
+              </div>
+              <div style={{ fontSize: 7, fontWeight: 800, color: gp.color, letterSpacing: "0.04em" }}>{gp.label}</div>
+              {/* Bar chart */}
+              <div style={{ display: "flex", gap: 1.5, alignItems: "flex-end", height: 18, marginTop: 2 }}>
+                {bars.map(b => (
+                  <div key={b} style={{
+                    width: 4, borderRadius: 1,
+                    height: `${(b / 10) * 18}px`,
+                    background: b <= gp.rounded ? gp.color : "#f0f0f0",
+                    transition: "background .3s",
+                  }} />
+                ))}
+              </div>
+              {/* Best bet */}
+              {gp.bet && gp.rounded >= 4 && (
+                <div style={{ fontSize: 7, color: "#888", textAlign: "center", marginTop: 2, lineHeight: 1.3, maxWidth: 66 }}>
+                  {gp.bet}
+                </div>
+              )}
+              {/* Time label */}
+              {gp.timeLeft > 0 && (
+                <div style={{ fontSize: 7, color: "#bbb", fontFamily: "monospace" }}>
+                  {gp.timeLeft}′ to {gp.halfLabel}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Divider */}
+        <div style={{ width: 1, alignSelf: "stretch", background: "#f0f0f0", flexShrink: 0 }} />
+
+        {/* Heat + star + FD — col 4 */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
           <div style={{
-            width: 36, height: 36, borderRadius: "50%",
+            width: 34, height: 34, borderRadius: "50%",
             border: `2.5px solid ${color}`,
             background: `${color}12`,
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color, fontFamily: "monospace" }}>{s}</span>
+            <span style={{ fontSize: 10, fontWeight: 800, color, fontFamily: "monospace" }}>{s}</span>
           </div>
           <button onClick={e => { e.stopPropagation(); onFavToggle(m.fixture_id); }} style={{
             background: "none", border: "none", cursor: "pointer",
