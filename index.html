@@ -21,15 +21,25 @@
             const [loading, setLoading] = useState(true);
 
             useEffect(() => {
-                // This connects to your Render Backend from file 83099443-90a3-4a2c-a1bf-96a6182033cd
-                fetch('https://soccer-momentum-app-1.onrender.com/api/live')
-                    .then(res => res.json())
-                    .then(data => {
-                        setMatches(data.matches || []);
-                        setLoading(false);
-                    })
-                    .catch(err => console.error("Error fetching matches:", err));
-            }, []);
+    const fetchMatches = () => {
+        fetch('https://soccer-momentum-app-1.onrender.com/api/live')
+            .then(res => res.json())
+            .then(data => {
+                setMatches(data.matches || []);
+                setLoading(false);
+            })
+            .catch(err => console.error("Error:", err));
+    };
+
+    // Run once immediately on load
+    fetchMatches();
+
+    // Then run every 60 seconds (60000 milliseconds)
+    const interval = setInterval(fetchMatches, 60000);
+
+    // Clean up the timer if the page closes
+    return () => clearInterval(interval);
+}, []);
 
             return (
                 <div class="p-4 max-w-md mx-auto">
