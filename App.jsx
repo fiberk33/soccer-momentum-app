@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
-const API_URL = "/api/live";
+const API_LIVE = "/api/live";
+const API_UPCOMING = "/api/upcoming";
 const REFRESH = 60;
 
 // Leagues FanDuel typically offers live soccer betting on
@@ -149,13 +150,18 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
         transition: "background .15s", gap: 8,
       }}>
 
-        {/* Minute */}
-        <div style={{ width: 40, flexShrink: 0, textAlign: "center", paddingTop: 2 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#e53935", fontFamily: "monospace", lineHeight: 1.2 }}>
-            {m.minute}′
-          </div>
-          {isVila && (
-            <div style={{ fontSize: 8, color: "#f9a825", fontWeight: 700, marginTop: 2 }}>VILA</div>
+        {/* Minute / Kickoff */}
+        <div style={{ width: 44, flexShrink: 0, textAlign: "center", paddingTop: 2 }}>
+          {m.status === "NS" ? (
+            <>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#1565c0", fontFamily: "monospace", lineHeight: 1.2 }}>{m.kickoff_display}</div>
+              <div style={{ fontSize: 8, color: "#1565c0", fontWeight: 600, marginTop: 2 }}>{m.time_until}</div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#e53935", fontFamily: "monospace", lineHeight: 1.2 }}>{m.minute}′</div>
+              {isVila && <div style={{ fontSize: 8, color: "#f9a825", fontWeight: 700, marginTop: 2 }}>VILA</div>}
+            </>
           )}
         </div>
 
@@ -300,6 +306,7 @@ function AlertPanel({ threshold, onChange, onClose }) {
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
+  const [showLive, setShowLive] = useState(true);
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -320,7 +327,7 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(showLive ? API_LIVE : API_UPCOMING);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
       if (!json.matches || json.matches.length === 0) {
@@ -346,9 +353,10 @@ export default function App() {
       setCountdown(REFRESH);
       setTick(t => t + 1);
     }
-  }, []);
+  }, [showLive]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [showLive]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -409,14 +417,22 @@ export default function App() {
             )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{
-              fontSize: 10, fontFamily: "monospace", padding: "3px 8px", borderRadius: 4, fontWeight: 700,
-              border: `1px solid ${isDemo ? "#f9a82544" : "#43a04744"}`,
-              color: isDemo ? "#f9a825" : "#43a047",
-              background: isDemo ? "#fffde7" : "#e8f5e9",
-            }}>
-              {isDemo ? "DEMO" : "● LIVE"}
-            </span>
+            <div style={{ display: "flex", background: "#f0f0f0", borderRadius: 20, padding: 2, gap: 1 }}>
+              <button onClick={() => setShowLive(true)} style={{
+                padding: "4px 10px", borderRadius: 18, border: "none", cursor: "pointer",
+                fontSize: 11, fontWeight: 700,
+                background: showLive ? "#e53935" : "transparent",
+                color: showLive ? "#fff" : "#aaa",
+                transition: "all .2s",
+              }}>● LIVE</button>
+              <button onClick={() => setShowLive(false)} style={{
+                padding: "4px 10px", borderRadius: 18, border: "none", cursor: "pointer",
+                fontSize: 11, fontWeight: 700,
+                background: !showLive ? "#1565c0" : "transparent",
+                color: !showLive ? "#fff" : "#aaa",
+                transition: "all .2s",
+              }}>UPCOMING</button>
+            </div>
             <button onClick={() => setShowFavsOnly(f => !f)} style={{
               background: showFavsOnly ? "#fff8e1" : "#fafafa",
               border: `1px solid ${showFavsOnly ? "#f9a82566" : "#e0e0e0"}`,
@@ -461,7 +477,7 @@ export default function App() {
         {/* Filter tabs */}
         <div style={{ display: "flex", borderBottom: "1px solid #f0f0f0" }}>
           {[
-            { key: "ALL", label: `Live ${matches.length}` },
+            { key: "ALL", label: `${showLive ? "Live" : "Next"} ${matches.length}` },
             { key: "EXTREME", label: `🔥 ${matches.filter(m => m.heat_score >= 80).length}` },
             { key: "HIGH", label: `🟠 ${matches.filter(m => m.heat_score >= 60 && m.heat_score < 80).length}` },
             { key: "OTHER", label: "Low" },
