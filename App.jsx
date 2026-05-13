@@ -416,7 +416,40 @@ export default function App() {
           {showFavsOnly ? "No favourites yet — tap ★ on a match." : "No matches in this category."}
         </div>
       ) : (
-        <div style={{ background: "#fff", marginTop: 8, borderRadius: 0 }}>
+        <div style={{ background: "#fff", marginTop: 8 }}>
+
+          {/* FAVOURITES GROUP — pinned at top when any starred */}
+          {favourites.size > 0 && (() => {
+            const favMatches = matches.filter(m => favourites.has(m.fixture_id)).sort((a, b) => b.heat_score - a.heat_score);
+            if (favMatches.length === 0) return null;
+            const topHeat = Math.max(...favMatches.map(m => m.heat_score));
+            return (
+              <div style={{ borderBottom: "3px solid #f9a825", marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px", background: "linear-gradient(90deg,#fff8e1,#fff)", borderBottom: "1px solid #ffe082", borderTop: "1px solid #ffe082" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <span style={{ fontSize: 15, color: "#f9a825" }}>★</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#f57f17", letterSpacing: "0.03em" }}>MY WATCHLIST</span>
+                    <span style={{ fontSize: 10, background: "#f9a825", color: "#fff", borderRadius: 10, padding: "1px 7px", fontWeight: 700 }}>{favMatches.length}</span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#f57c00", fontFamily: "monospace", background: "#fff8e1", border: "1px solid #ffe08266", borderRadius: 4, padding: "2px 7px" }}>
+                    TOP {topHeat}
+                  </span>
+                </div>
+                {favMatches.map(m => (
+                  <MatchRow
+                    key={"fav-" + m.fixture_id}
+                    m={m}
+                    expanded={expanded === "fav-" + m.fixture_id}
+                    onToggle={() => setExpanded(expanded === "fav-" + m.fixture_id ? null : "fav-" + m.fixture_id)}
+                    isFav={true}
+                    onFavToggle={toggleFav}
+                  />
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* LEAGUE GROUPS */}
           {groups.map(group => (
             <div key={group.label}>
               <LeagueHeader label={group.label} topHeat={Math.max(...group.matches.map(m => m.heat_score))} />
