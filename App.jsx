@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-const API_LIVE = "/api/live";
-const API_UPCOMING = "/api/upcoming";
+const API_URL = "/api/all";
 const REFRESH = 60;
 
 // Leagues FanDuel typically offers live soccer betting on
@@ -306,7 +305,7 @@ function AlertPanel({ threshold, onChange, onClose }) {
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [showLive, setShowLive] = useState(true);
+  const [filterLive, setFilterLive] = useState(false);
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -327,7 +326,7 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(showLive ? API_LIVE : API_UPCOMING);
+      const res = await fetch(API_URL);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
       if (!json.matches || json.matches.length === 0) {
@@ -353,10 +352,9 @@ export default function App() {
       setCountdown(REFRESH);
       setTick(t => t + 1);
     }
-  }, [showLive]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { load(); }, [showLive]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -380,6 +378,7 @@ export default function App() {
   const toggleFanduel = id => setFanduelGames(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   let displayed = [...matches];
+  if (filterLive) displayed = displayed.filter(m => m.status !== "NS");
   if (showFavsOnly) displayed = displayed.filter(m => favourites.has(m.fixture_id));
   if (showFanduelOnly) displayed = displayed.filter(m => fanduelGames.has(m.fixture_id));
   if (filter === "EXTREME") displayed = displayed.filter(m => m.heat_score >= 80);
@@ -418,20 +417,20 @@ export default function App() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ display: "flex", background: "#f0f0f0", borderRadius: 20, padding: 2, gap: 1 }}>
-              <button onClick={() => setShowLive(true)} style={{
+              <button onClick={() => setFilterLive(false)} style={{
                 padding: "4px 10px", borderRadius: 18, border: "none", cursor: "pointer",
                 fontSize: 11, fontWeight: 700,
-                background: showLive ? "#e53935" : "transparent",
-                color: showLive ? "#fff" : "#aaa",
+                background: !filterLive ? "#1565c0" : "transparent",
+                color: !filterLive ? "#fff" : "#aaa",
+                transition: "all .2s",
+              }}>ALL</button>
+              <button onClick={() => setFilterLive(true)} style={{
+                padding: "4px 10px", borderRadius: 18, border: "none", cursor: "pointer",
+                fontSize: 11, fontWeight: 700,
+                background: filterLive ? "#e53935" : "transparent",
+                color: filterLive ? "#fff" : "#aaa",
                 transition: "all .2s",
               }}>● LIVE</button>
-              <button onClick={() => setShowLive(false)} style={{
-                padding: "4px 10px", borderRadius: 18, border: "none", cursor: "pointer",
-                fontSize: 11, fontWeight: 700,
-                background: !showLive ? "#1565c0" : "transparent",
-                color: !showLive ? "#fff" : "#aaa",
-                transition: "all .2s",
-              }}>UPCOMING</button>
             </div>
             <button onClick={() => setShowFavsOnly(f => !f)} style={{
               background: showFavsOnly ? "#fff8e1" : "#fafafa",
@@ -477,7 +476,7 @@ export default function App() {
         {/* Filter tabs */}
         <div style={{ display: "flex", borderBottom: "1px solid #f0f0f0" }}>
           {[
-            { key: "ALL", label: `${showLive ? "Live" : "Next"} ${matches.length}` },
+            { key: "ALL", label: `All ${matches.length}` },
             { key: "EXTREME", label: `🔥 ${matches.filter(m => m.heat_score >= 80).length}` },
             { key: "HIGH", label: `🟠 ${matches.filter(m => m.heat_score >= 60 && m.heat_score < 80).length}` },
             { key: "OTHER", label: "Low" },
