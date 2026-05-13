@@ -1,98 +1,18 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soccer Momentum Pro</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#080808" />
+    <title>MomentumTrack · Soccer</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⚽%3C/text%3E%3C/svg%3E" />
     <style>
-        .momentum-bar { transition: width 0.5s ease-in-out; }
+      html, body { background: #080808; margin: 0; }
+      body { font-family: 'Segoe UI', system-ui, sans-serif; color: #e0e0e0; }
     </style>
-</head>
-<body class="bg-gray-900 text-white font-sans">
+  </head>
+  <body>
     <div id="root"></div>
-
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-
-        function App() {
-            const [matches, setMatches] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const [error, setError] = useState(null);
-
-            const fetchData = async () => {
-                try {
-                    const response = await fetch('https://soccer-momentum-app-1.onrender.com/api/live');
-                    const data = await response.json();
-                    
-                    // Uses the 'response' key confirmed in your live API
-                    setMatches(data.response || []);
-                    setLoading(false);
-                    setError(null);
-                } catch (err) {
-                    console.error("Fetch error:", err);
-                    setError("Backend is waking up... please wait.");
-                    setLoading(false);
-                }
-            };
-
-            useEffect(() => {
-                fetchData();
-                // Refresh every 60 seconds to stay under Pro limits
-                const timer = setInterval(fetchData, 60000);
-                return () => clearInterval(timer);
-            }, []);
-
-            return (
-                <div class="max-w-4xl mx-auto p-6">
-                    <header class="flex justify-between items-center mb-8 border-b border-gray-800 pb-4">
-                        <h1 class="text-3xl font-black text-green-400 tracking-tighter">SOCCER MOMENTUM</h1>
-                        <div class="text-xs bg-gray-800 px-3 py-1 rounded-full text-gray-400">
-                            Live Update: Every 60s
-                        </div>
-                    </header>
-
-                    {loading ? (
-                        <div class="text-center py-20 animate-pulse text-xl">Scanning Global Matches...</div>
-                    ) : error ? (
-                        <div class="bg-red-900/20 border border-red-500 p-4 rounded text-center">{error}</div>
-                    ) : matches.length === 0 ? (
-                        <div class="text-center py-20 text-gray-500 italic">No major live matches at this hour.</div>
-                    ) : (
-                        <div class="grid gap-4">
-                            {matches.map((match) => (
-                                <div key={match.fixture.id} class="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:border-green-500 transition-colors">
-                                    <div class="flex justify-between items-center mb-4 text-sm font-bold text-gray-400 uppercase tracking-widest">
-                                        <span>{match.league.name}</span>
-                                        <span class="text-green-500 animate-pulse">{match.fixture.status.elapsed}'</span>
-                                    </div>
-                                    
-                                    <div class="flex items-center justify-between gap-4">
-                                        <div class="flex-1 text-right text-xl font-bold">{match.teams.home.name}</div>
-                                        <div class="bg-gray-900 px-4 py-2 rounded-lg text-2xl font-black text-green-400">
-                                            {match.goals.home} - {match.goals.away}
-                                        </div>
-                                        <div class="flex-1 text-left text-xl font-bold">{match.teams.away.name}</div>
-                                    </div>
-                                    
-                                    {/* Simplified Momentum Bar Placeholder */}
-                                    <div class="mt-6 bg-gray-900 h-2 rounded-full overflow-hidden flex">
-                                        <div class="bg-blue-500 h-full w-1/2 border-r border-gray-900"></div>
-                                        <div class="bg-red-500 h-full w-1/2"></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
+    <script type="module" src="/main.jsx"></script>
+  </body>
 </html>
