@@ -18,7 +18,7 @@ def get_live():
     
     url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
     headers = {
-        "x-rapidapi-key": API_FOOTBALL_KEY,
+        "x-rapidapi-key": API_KEY,
         "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
     }
     
