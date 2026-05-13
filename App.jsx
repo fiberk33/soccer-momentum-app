@@ -3,6 +3,16 @@ import { useState, useEffect, useCallback } from "react";
 const API_URL = "/api/live";
 const REFRESH = 60;
 
+// Leagues FanDuel typically offers live soccer betting on
+const FANDUEL_LEAGUES = [
+  "Premier League", "La Liga", "Bundesliga", "Serie A", "Ligue 1",
+  "Champions League", "UEFA Champions League", "Europa League", "UEFA Europa League",
+  "Conference League", "UEFA Europa Conference League",
+  "Championship", "Eredivisie", "Primeira Liga", "Scottish Premiership",
+  "Super Lig", "Brasileirao Serie A", "Liga MX", "MLS", "Jupiler Pro League",
+  "Ligue 2", "Serie B", "2. Bundesliga", "La Liga 2",
+];
+
 // ─── DEMO FALLBACK ────────────────────────────────────────────────────────────
 const DEMO = [
   { fixture_id:1001, league:"Premier League", country:"England", minute:87, status:"2H", heat_score:91, alert_level:"🔥 EXTREME", has_full_stats:true, breakdown:{high_pressure:35,red_card_multiplier:20,vila_effect:31,triggers:["Dominant possession: Man City 68%","High attack rate: 2.41/min","⚡ High Pressure Zone","🟥 Red Card Multiplier","⏱️ Vila Effect: 3′ remaining"]}, home:{name:"Man City",logo:"",goals:1,possession:68,shots_on_target:9,corners:7,dangerous_attacks:42,yellow_cards:2,red_cards:0}, away:{name:"Arsenal",logo:"",goals:1,possession:32,shots_on_target:3,corners:2,dangerous_attacks:18,yellow_cards:1,red_cards:1}, dangerous_attacks_per_min:2.41 },
@@ -98,23 +108,49 @@ function MatchDetail({ m }) {
 }
 
 // ─── MATCH ROW ────────────────────────────────────────────────────────────────
-function MatchRow({ m, expanded, onToggle, isFav, onFavToggle }) {
+function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFanduelToggle }) {
   const s = m.heat_score;
   const color = heatColor(s);
   const isVila = (m.minute >= 35 && m.minute <= 45) || (m.minute >= 80 && m.minute <= 93);
   const homeWin = m.home.goals > m.away.goals;
   const awayWin = m.away.goals > m.home.goals;
 
+  // Build up to 5 bet signals from match data
+  const signals = [];
+  const bd = m.breakdown || {};
+  const triggers = bd.triggers || [];
+  const diff = Math.abs(m.home.goals - m.away.goals);
+  const isDraw = diff === 0;
+  const dominant = m.home.possession > m.away.possession ? m.home : m.away;
+  const recessive = dominant === m.home ? m.away : m.home;
+
+  if (bd.vila_effect > 0)
+    signals.push({ icon: "⏱️", text: "Vila Window", bet: "Over 0.5", color: "#f9a825" });
+  if (bd.red_card_multiplier > 0)
+    signals.push({ icon: "🟥", text: "Red Card", bet: recessive.red_cards > 0 ? `${dominant.name} Next Goal` : `${recessive.name} Next Goal`, color: "#e53935" });
+  if (isDraw && m.minute > 60)
+    signals.push({ icon: "⚡", text: "Late Draw", bet: "Over 0.5", color: "#7b1fa2" });
+  if (dominant.possession >= 65)
+    signals.push({ icon: "🔵", text: `${dominant.name} pressing`, bet: `${dominant.name} Next Goal`, color: "#1565c0" });
+  if ((m.home.goals + m.away.goals) >= 3)
+    signals.push({ icon: "🔥", text: "High Scoring", bet: "Over 0.5", color: "#e53935" });
+  if (diff === 1 && m.minute > 70)
+    signals.push({ icon: "📈", text: "1 Goal Late", bet: "Over 0.5", color: "#2e7d32" });
+  if (m.dangerous_attacks_per_min >= 1.5)
+    signals.push({ icon: "⚡", text: "High Attacks", bet: "Over 0.5", color: "#f57c00" });
+
+  const topSignals = signals.slice(0, 5);
+
   return (
     <div style={{ borderBottom: "1px solid #f0f0f0" }}>
       <div onClick={onToggle} style={{
-        display: "flex", alignItems: "center", padding: "10px 14px",
+        display: "flex", alignItems: "flex-start", padding: "10px 10px 10px 14px",
         cursor: "pointer", background: expanded ? "#fafafa" : "#fff",
-        transition: "background .15s",
+        transition: "background .15s", gap: 8,
       }}>
 
         {/* Minute */}
-        <div style={{ width: 44, flexShrink: 0, textAlign: "center" }}>
+        <div style={{ width: 40, flexShrink: 0, textAlign: "center", paddingTop: 2 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: "#e53935", fontFamily: "monospace", lineHeight: 1.2 }}>
             {m.minute}′
           </div>
@@ -124,45 +160,62 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle }) {
         </div>
 
         {/* Divider */}
-        <div style={{ width: 1, height: 36, background: "#f0f0f0", marginRight: 12, flexShrink: 0 }} />
+        <div style={{ width: 1, alignSelf: "stretch", background: "#f0f0f0", flexShrink: 0 }} />
 
-        {/* Teams + Scores */}
+        {/* Teams + Scores — col 1 */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* Home */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0, flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flex: 1 }}>
               {m.home.logo
-                ? <img src={m.home.logo} width="16" height="16" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
-                : <div style={{ width: 16, height: 16, background: "#e8e8e8", borderRadius: 2, flexShrink: 0 }} />
+                ? <img src={m.home.logo} width="15" height="15" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
+                : <div style={{ width: 15, height: 15, background: "#e8e8e8", borderRadius: 2, flexShrink: 0 }} />
               }
-              <span style={{ fontSize: 13, color: homeWin ? "#111" : "#555", fontWeight: homeWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 12, color: homeWin ? "#111" : "#555", fontWeight: homeWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {m.home.name}
               </span>
-              {m.home.red_cards > 0 && <span style={{ fontSize: 8, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
+              {m.home.red_cards > 0 && <span style={{ fontSize: 7, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
             </div>
-            <span style={{ fontSize: 16, fontWeight: 800, color: "#111", marginLeft: 8, flexShrink: 0, minWidth: 16, textAlign: "right" }}>{m.home.goals}</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.home.goals}</span>
           </div>
-
           {/* Away */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0, flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flex: 1 }}>
               {m.away.logo
-                ? <img src={m.away.logo} width="16" height="16" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
-                : <div style={{ width: 16, height: 16, background: "#e8e8e8", borderRadius: 2, flexShrink: 0 }} />
+                ? <img src={m.away.logo} width="15" height="15" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
+                : <div style={{ width: 15, height: 15, background: "#e8e8e8", borderRadius: 2, flexShrink: 0 }} />
               }
-              <span style={{ fontSize: 13, color: awayWin ? "#111" : "#555", fontWeight: awayWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 12, color: awayWin ? "#111" : "#555", fontWeight: awayWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {m.away.name}
               </span>
-              {m.away.red_cards > 0 && <span style={{ fontSize: 8, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
+              {m.away.red_cards > 0 && <span style={{ fontSize: 7, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
             </div>
-            <span style={{ fontSize: 16, fontWeight: 800, color: "#111", marginLeft: 8, flexShrink: 0, minWidth: 16, textAlign: "right" }}>{m.away.goals}</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.away.goals}</span>
           </div>
         </div>
 
-        {/* Heat ring + star */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, marginLeft: 14, flexShrink: 0 }}>
+        {/* Divider */}
+        <div style={{ width: 1, alignSelf: "stretch", background: "#f0f0f0", flexShrink: 0 }} />
+
+        {/* Signals column — col 2 */}
+        <div style={{ width: 110, flexShrink: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+          {topSignals.length === 0 ? (
+            <div style={{ fontSize: 9, color: "#ccc", fontStyle: "italic", marginTop: 4 }}>No signals</div>
+          ) : topSignals.map((sig, i) => (
+            <div key={i} style={{ display: "flex", flexDirection: "column", background: `${sig.color}0d`, border: `1px solid ${sig.color}33`, borderRadius: 4, padding: "2px 5px" }}>
+              <div style={{ fontSize: 9, color: sig.color, fontWeight: 700 }}>{sig.icon} {sig.text}</div>
+              <div style={{ fontSize: 8, color: "#888", fontWeight: 600 }}>→ {sig.bet}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Divider */}
+        <div style={{ width: 1, alignSelf: "stretch", background: "#f0f0f0", flexShrink: 0 }} />
+
+        {/* Heat + star + FD — col 3 */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
           <div style={{
-            width: 38, height: 38, borderRadius: "50%",
+            width: 36, height: 36, borderRadius: "50%",
             border: `2.5px solid ${color}`,
             background: `${color}12`,
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -174,6 +227,14 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle }) {
             fontSize: 14, color: isFav ? "#f9a825" : "#ccc",
             padding: 0, lineHeight: 1,
           }}>★</button>
+          <button onClick={e => { e.stopPropagation(); onFanduelToggle && onFanduelToggle(m.fixture_id); }} style={{
+            background: isFanduel ? "#e8f5e9" : "none",
+            border: isFanduel ? "1px solid #a5d6a7" : "1px solid #e0e0e0",
+            borderRadius: 4, cursor: "pointer",
+            fontSize: 8, fontWeight: 700,
+            color: isFanduel ? "#2e7d32" : "#ccc",
+            padding: "2px 4px", lineHeight: 1.2,
+          }}>FD</button>
         </div>
       </div>
 
@@ -248,6 +309,8 @@ export default function App() {
   const [filter, setFilter] = useState("ALL");
   const [favourites, setFavourites] = useState(new Set());
   const [showFavsOnly, setShowFavsOnly] = useState(false);
+  const [fanduelGames, setFanduelGames] = useState(new Set());
+  const [showFanduelOnly, setShowFanduelOnly] = useState(false);
   const [alertThreshold, setAlertThreshold] = useState(80);
   const [showAlertPanel, setShowAlertPanel] = useState(false);
   const [alertFired, setAlertFired] = useState(new Set());
@@ -306,9 +369,11 @@ export default function App() {
   }, [matches, alertThreshold, alertFired]);
 
   const toggleFav = id => setFavourites(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleFanduel = id => setFanduelGames(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   let displayed = [...matches];
   if (showFavsOnly) displayed = displayed.filter(m => favourites.has(m.fixture_id));
+  if (showFanduelOnly) displayed = displayed.filter(m => fanduelGames.has(m.fixture_id));
   if (filter === "EXTREME") displayed = displayed.filter(m => m.heat_score >= 80);
   else if (filter === "HIGH") displayed = displayed.filter(m => m.heat_score >= 60 && m.heat_score < 80);
   else if (filter === "OTHER") displayed = displayed.filter(m => m.heat_score < 60);
@@ -358,6 +423,14 @@ export default function App() {
               borderRadius: 6, padding: "4px 9px", cursor: "pointer",
               fontSize: 13, color: showFavsOnly ? "#f9a825" : "#aaa",
             }}>★{favourites.size > 0 && ` ${favourites.size}`}</button>
+            <button onClick={() => setShowFanduelOnly(f => !f)} style={{
+              background: showFanduelOnly ? "#e8f5e9" : "#fafafa",
+              border: `1px solid ${showFanduelOnly ? "#43a04766" : "#e0e0e0"}`,
+              borderRadius: 6, padding: "4px 9px", cursor: "pointer",
+              fontSize: 11, fontWeight: 700,
+              color: showFanduelOnly ? "#2e7d32" : "#aaa",
+              letterSpacing: "0.02em",
+            }}>🟢 FD{fanduelGames.size > 0 ? ` ${fanduelGames.size}` : ""}{showFanduelOnly ? " ✓" : ""}</button>
             <button onClick={() => setShowAlertPanel(true)} style={{ background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 6, padding: "4px 9px", cursor: "pointer", fontSize: 13, color: "#aaa" }}>🔔</button>
             <button onClick={load} style={{
               background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 6,
@@ -443,6 +516,41 @@ export default function App() {
                     onToggle={() => setExpanded(expanded === "fav-" + m.fixture_id ? null : "fav-" + m.fixture_id)}
                     isFav={true}
                     onFavToggle={toggleFav}
+                    isFanduel={fanduelGames.has(m.fixture_id)}
+                    onFanduelToggle={toggleFanduel}
+                  />
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* FANDUEL LIVE GROUP */}
+          {fanduelGames.size > 0 && (() => {
+            const fdMatches = matches.filter(m => fanduelGames.has(m.fixture_id)).sort((a, b) => b.heat_score - a.heat_score);
+            if (fdMatches.length === 0) return null;
+            const topHeat = Math.max(...fdMatches.map(m => m.heat_score));
+            return (
+              <div style={{ borderBottom: "3px solid #43a047", marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px", background: "linear-gradient(90deg,#e8f5e9,#fff)", borderBottom: "1px solid #a5d6a7", borderTop: "1px solid #a5d6a7" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <span style={{ fontSize: 14 }}>🟢</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32", letterSpacing: "0.03em" }}>FANDUEL LIVE</span>
+                    <span style={{ fontSize: 10, background: "#43a047", color: "#fff", borderRadius: 10, padding: "1px 7px", fontWeight: 700 }}>{fdMatches.length}</span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#2e7d32", fontFamily: "monospace", background: "#e8f5e9", border: "1px solid #a5d6a766", borderRadius: 4, padding: "2px 7px" }}>
+                    TOP {topHeat}
+                  </span>
+                </div>
+                {fdMatches.map(m => (
+                  <MatchRow
+                    key={"fd-" + m.fixture_id}
+                    m={m}
+                    expanded={expanded === "fd-" + m.fixture_id}
+                    onToggle={() => setExpanded(expanded === "fd-" + m.fixture_id ? null : "fd-" + m.fixture_id)}
+                    isFav={favourites.has(m.fixture_id)}
+                    onFavToggle={toggleFav}
+                    isFanduel={true}
+                    onFanduelToggle={toggleFanduel}
                   />
                 ))}
               </div>
@@ -461,6 +569,8 @@ export default function App() {
                   onToggle={() => setExpanded(expanded === m.fixture_id ? null : m.fixture_id)}
                   isFav={favourites.has(m.fixture_id)}
                   onFavToggle={toggleFav}
+                  isFanduel={fanduelGames.has(m.fixture_id)}
+                  onFanduelToggle={toggleFanduel}
                 />
               ))}
             </div>
