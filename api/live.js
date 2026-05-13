@@ -1,9 +1,7 @@
-// api/live.js
-// Vercel Serverless Function — runs on the server, invisible to the browser.
-// Proxies requests to RapidAPI so the API key is never exposed client-side
-// and CORS is never an issue.
+// api/live.js — uses api-sports.io directly (not RapidAPI)
+// Set APISPORTS_KEY in Vercel → Settings → Environment Variables
 
-const RAPIDAPI_HOST = "api-football-v1.p.rapidapi.com";
+const BASE_URL = "https://v3.football.api-sports.io";
 
 function parseStat(stats, teamIdx, name, fallback = 0) {
   try {
@@ -15,49 +13,45 @@ function parseStat(stats, teamIdx, name, fallback = 0) {
 }
 
 export default async function handler(req, res) {
-  // CORS headers so the frontend can call this function
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const apiKey = process.env.RAPIDAPI_KEY;
+  const apiKey = process.env.APISPORTS_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "RAPIDAPI_KEY not set in Vercel environment variables" });
+    return res.status(500).json({ error: "APISPORTS_KEY not set in Vercel environment variables" });
   }
 
-  const headers = {
-    "X-RapidAPI-Key": apiKey,
-    "X-RapidAPI-Host": RAPIDAPI_HOST,
-  };
+  // API-Sports uses x-apisports-key header
+  const headers = { "x-apisports-key": apiKey };
 
   try {
-    // 1. Fetch all live fixtures
-    const fixtRes = await fetch(
-      `https://${RAPIDAPI_HOST}/v3/fixtures?live=all`,
-      { headers }
-    );
+    // 1. Get all live fixtures
+    const fixtRes = await fetch(`${BASE_URL}/fixtures?live=all`, { headers });
     if (!fixtRes.ok) {
       const text = await fixtRes.text();
-      return res.status(502).json({ error: `RapidAPI error: ${fixtRes.status}`, detail: text });
+      return res.status(502).json({ error: `API-Sports error: ${fixtRes.status}`, detail: text });
     }
 
     const fixtData = await fixtRes.json();
+
+    // Check for API-level errors
+    if (fixtData.errors && Object.keys(fixtData.errors).length > 0) {
+      return res.status(401).json({ error: "API-Sports auth error", detail: fixtData.errors });
+    }
+
     const fixtures = fixtData.response || [];
 
     if (fixtures.length === 0) {
-      return res.status(200).json({ source: "api-football", count: 0, matches: [] });
+      return res.status(200).json({ source: "api-sports", count: 0, matches: [] });
     }
 
-    // 2. Fetch stats for each fixture (cap at 12 to stay within free quota)
+    // 2. Fetch stats per fixture (cap at 12 to stay within daily quota)
     const matches = [];
     for (const fx of fixtures.slice(0, 12)) {
       try {
         const fid = fx.fixture.id;
-        const statRes = await fetch(
-          `https://${RAPIDAPI_HOST}/v3/fixtures/statistics?fixture=${fid}`,
-          { headers }
-        );
+        const statRes = await fetch(`${BASE_URL}/fixtures/statistics?fixture=${fid}`, { headers });
         const statData = await statRes.json();
         const stats = statData.response || [];
 
@@ -102,7 +96,6 @@ export default async function handler(req, res) {
           odds: null,
         });
 
-        // Small delay to avoid rate-limit spikes
         await new Promise(r => setTimeout(r, 120));
       } catch (e) {
         console.error("Stat fetch failed:", e.message);
@@ -110,7 +103,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json({
-      source: "api-football",
+      source: "api-sports",
       count: matches.length,
       generated_at: new Date().toISOString(),
       matches,
