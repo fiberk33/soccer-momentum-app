@@ -186,14 +186,19 @@ export default async function handler(req, res) {
   try {
     const today = new Date().toISOString().split("T")[0];
 
-    // Step 1: Fetch live + upcoming in parallel
-    const [liveRes, upcomingRes] = await Promise.all([
+    // Step 1: Fetch live + finished today + upcoming in parallel
+    const [liveRes, finishedRes, upcomingRes] = await Promise.all([
       fetch(`${BASE_URL}/fixtures?live=all`, { headers }),
+      fetch(`${BASE_URL}/fixtures?date=${today}&status=FT`, { headers }),
       fetch(`${BASE_URL}/fixtures?date=${today}&status=NS`, { headers }),
     ]);
-    const [liveData, upcomingData] = await Promise.all([liveRes.json(), upcomingRes.json()]);
+    const [liveData, finishedData, upcomingData] = await Promise.all([
+      liveRes.json(), finishedRes.json(), upcomingRes.json()
+    ]);
 
     const liveFixtures = liveData.response || [];
+    const finishedFixtures = (finishedData.response || [])
+      .filter(fx => FEATURED_LEAGUE_IDS.includes(fx.league.id));
     const upcomingFixtures = (upcomingData.response || [])
       .filter(fx => FEATURED_LEAGUE_IDS.includes(fx.league.id))
       .sort((a, b) => new Date(a.fixture.date) - new Date(b.fixture.date));
@@ -315,6 +320,45 @@ export default async function handler(req, res) {
       };
     }).sort((a, b) => b.heat_score - a.heat_score);
 
+    // Step 4b: Build finished match objects
+    const finishedMatches = finishedFixtures.map(fx => {
+      const minute = fx.fixture.status.elapsed || 90;
+      const events = fx.events || [];
+      const homeId = fx.teams.home.id;
+      let homeYellow = 0, awayYellow = 0, homeRed = 0, awayRed = 0;
+      events.forEach(e => {
+        const isHome = e.team?.id === homeId;
+        if (e.type === "Card") {
+          if (e.detail === "Yellow Card") isHome ? homeYellow++ : awayYellow++;
+          if (e.detail === "Red Card" || e.detail === "Second Yellow card") isHome ? homeRed++ : awayRed++;
+        }
+      });
+      return {
+        fixture_id: fx.fixture.id,
+        league: fx.league.name, country: fx.league.country,
+        minute, status: "FT",
+        kickoff: fx.fixture.date, kickoff_display: null, time_until: null, mins_until: null,
+        heat_score: 0, alert_level: "✅ FT",
+        has_full_stats: false,
+        breakdown: { high_pressure: 0, red_card_multiplier: 0, vila_effect: 0, triggers: [] },
+        home: {
+          name: fx.teams.home.name, logo: fx.teams.home.logo || "",
+          id: homeId, goals: fx.goals.home ?? 0,
+          possession: 0, shots_on_target: 0, corners: 0,
+          dangerous_attacks: 0, yellow_cards: homeYellow, red_cards: homeRed,
+          favorite: fx.teams.home.winner, vila: null,
+        },
+        away: {
+          name: fx.teams.away.name, logo: fx.teams.away.logo || "",
+          id: fx.teams.away.id, goals: fx.goals.away ?? 0,
+          possession: 0, shots_on_target: 0, corners: 0,
+          dangerous_attacks: 0, yellow_cards: awayYellow, red_cards: awayRed,
+          favorite: fx.teams.away.winner, vila: null,
+        },
+        dangerous_attacks_per_min: 0, odds: null,
+      };
+    }).sort((a, b) => new Date(b.kickoff) - new Date(a.kickoff)); // most recent first
+
     // Step 5: Build upcoming match objects
     const now = new Date();
     const upcomingMatches = upcomingFixtures.slice(0, 60).map(fx => {
@@ -342,12 +386,13 @@ export default async function handler(req, res) {
       };
     });
 
-    const matches = [...liveMatches, ...upcomingMatches];
+    const matches = [...liveMatches, ...finishedMatches, ...upcomingMatches];
 
     return res.status(200).json({
       source: "api-sports-pro",
       count: matches.length,
       live_count: liveMatches.length,
+      finished_count: finishedMatches.length,
       upcoming_count: upcomingMatches.length,
       vila_teams_analyzed: Object.keys(teamHistoryMap).length,
       generated_at: new Date().toISOString(),
