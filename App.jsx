@@ -15,11 +15,11 @@ const FANDUEL_LEAGUES = [
 
 // ─── DEMO FALLBACK ────────────────────────────────────────────────────────────
 const DEMO = [
-  { fixture_id:1001, league:"Premier League", country:"England", minute:87, status:"2H", heat_score:91, alert_level:"🔥 EXTREME", has_full_stats:true, breakdown:{high_pressure:35,red_card_multiplier:20,vila_effect:31,triggers:["Dominant possession: Man City 68%","High attack rate: 2.41/min","⚡ High Pressure Zone","🟥 Red Card Multiplier","⏱️ Vila Effect: 3′ remaining"]}, home:{name:"Man City",logo:"",goals:1,possession:68,shots_on_target:9,corners:7,dangerous_attacks:42,yellow_cards:2,red_cards:0}, away:{name:"Arsenal",logo:"",goals:1,possession:32,shots_on_target:3,corners:2,dangerous_attacks:18,yellow_cards:1,red_cards:1}, dangerous_attacks_per_min:2.41 },
-  { fixture_id:1007, league:"Scottish Prem", country:"Scotland", minute:85, status:"2H", heat_score:78, alert_level:"🟠 HIGH", has_full_stats:true, breakdown:{high_pressure:22,red_card_multiplier:0,vila_effect:28,triggers:["High attack rate: 1.85/min","⏱️ Vila Effect: 5′ remaining"]}, home:{name:"Celtic",logo:"",goals:2,possession:54,shots_on_target:7,corners:6,dangerous_attacks:38,yellow_cards:1,red_cards:0}, away:{name:"Rangers",logo:"",goals:2,possession:46,shots_on_target:5,corners:5,dangerous_attacks:29,yellow_cards:2,red_cards:0}, dangerous_attacks_per_min:1.85 },
-  { fixture_id:1002, league:"La Liga", country:"Spain", minute:38, status:"1H", heat_score:67, alert_level:"🟠 HIGH", has_full_stats:true, breakdown:{high_pressure:18,red_card_multiplier:0,vila_effect:22,triggers:["High attack rate: 1.68/min","⏱️ Vila Effect: 7′ remaining"]}, home:{name:"Real Madrid",logo:"",goals:0,possession:52,shots_on_target:4,corners:4,dangerous_attacks:24,yellow_cards:1,red_cards:0}, away:{name:"Barcelona",logo:"",goals:0,possession:48,shots_on_target:5,corners:3,dangerous_attacks:22,yellow_cards:0,red_cards:0}, dangerous_attacks_per_min:1.68 },
-  { fixture_id:1004, league:"Ligue 1", country:"France", minute:56, status:"2H", heat_score:52, alert_level:"🟡 MEDIUM", has_full_stats:false, breakdown:{high_pressure:0,red_card_multiplier:0,vila_effect:0,triggers:["⚽ 3 goals scored","⚡ 1 goal game — late pressure"]}, home:{name:"PSG",logo:"",goals:2,possession:0,shots_on_target:0,corners:0,dangerous_attacks:0,yellow_cards:0,red_cards:0}, away:{name:"Lyon",logo:"",goals:1,possession:0,shots_on_target:0,corners:0,dangerous_attacks:0,yellow_cards:2,red_cards:0}, dangerous_attacks_per_min:0 },
-  { fixture_id:1003, league:"Bundesliga", country:"Germany", minute:14, status:"1H", heat_score:18, alert_level:"🟢 LOW", has_full_stats:false, breakdown:{high_pressure:0,red_card_multiplier:0,vila_effect:0,triggers:[]}, home:{name:"Bayern Munich",logo:"",goals:1,possession:0,shots_on_target:0,corners:0,dangerous_attacks:0,yellow_cards:0,red_cards:0}, away:{name:"Dortmund",logo:"",goals:0,possession:0,shots_on_target:0,corners:0,dangerous_attacks:0,yellow_cards:0,red_cards:0}, dangerous_attacks_per_min:0 },
+  { fixture_id:1001, league:"Premier League", country:"England", minute:87, status:"2H", heat_score:91, alert_level:"🔥 EXTREME", has_full_stats:true, breakdown:{high_pressure:35,red_card_multiplier:20,vila_effect:31,triggers:["Dominant possession: Man City 68%","High attack rate: 2.41/min","⚡ High Pressure Zone","🟥 Red Card Multiplier","⏱️ Vila Effect: 3′ remaining"]}, home:{name:"Man City",logo:"",goals:1,possession:68,shots_on_target:9,corners:7,dangerous_attacks:42,yellow_cards:2,red_cards:0,motivation:{score:9,label:"Title leader",tag:{text:"🏆 Title",color:"#f9a825"},rank:1,points:82},vila:null}, away:{name:"Arsenal",logo:"",goals:1,possession:32,shots_on_target:3,corners:2,dangerous_attacks:18,yellow_cards:1,red_cards:1,motivation:{score:10,label:"Title race",tag:{text:"🏆 Title race",color:"#f9a825"},rank:2,points:80},vila:{vilaScore:7,lateGoalRate:60,isVilaTeam:true,isStrongVila:true,gamesAnalyzed:10}}, dangerous_attacks_per_min:2.41 },
+  { fixture_id:1007, league:"Scottish Prem", country:"Scotland", minute:85, status:"2H", heat_score:78, alert_level:"🟠 HIGH", has_full_stats:true, breakdown:{high_pressure:22,red_card_multiplier:0,vila_effect:28,triggers:["High attack rate: 1.85/min","⏱️ Vila Effect: 5′ remaining"]}, home:{name:"Celtic",logo:"",goals:2,possession:54,shots_on_target:7,corners:6,dangerous_attacks:38,yellow_cards:1,red_cards:0,motivation:{score:8.5,label:"CL spot",tag:{text:"⭐ CL spot",color:"#1565c0"},rank:2,points:71},vila:{vilaScore:5,lateGoalRate:50,isVilaTeam:true,isStrongVila:false,gamesAnalyzed:10}}, away:{name:"Rangers",logo:"",goals:2,possession:46,shots_on_target:5,corners:5,dangerous_attacks:29,yellow_cards:2,red_cards:0,motivation:{score:10,label:"Relegation battle",tag:{text:"🆘 Relegation",color:"#c62828"},rank:11,points:28},vila:null}, dangerous_attacks_per_min:1.85 },
+  { fixture_id:1002, league:"La Liga", country:"Spain", minute:38, status:"1H", heat_score:67, alert_level:"🟠 HIGH", has_full_stats:true, breakdown:{high_pressure:18,red_card_multiplier:0,vila_effect:22,triggers:["High attack rate: 1.68/min","⏱️ Vila Effect: 7′ remaining"]}, home:{name:"Real Madrid",logo:"",goals:0,possession:52,shots_on_target:4,corners:4,dangerous_attacks:24,yellow_cards:1,red_cards:0,motivation:{score:9,label:"CL spot",tag:{text:"⭐ CL spot",color:"#1565c0"},rank:1,points:84},vila:null}, away:{name:"Barcelona",logo:"",goals:0,possession:48,shots_on_target:5,corners:3,dangerous_attacks:22,yellow_cards:0,red_cards:0,motivation:{score:4,label:"Mid-table",tag:{text:"😴 Nothing at stake",color:"#aaa"},rank:9,points:45},vila:null}, dangerous_attacks_per_min:1.68 },
+  { fixture_id:1004, league:"Ligue 1", country:"France", minute:56, status:"2H", heat_score:52, alert_level:"🟡 MEDIUM", has_full_stats:false, breakdown:{high_pressure:0,red_card_multiplier:0,vila_effect:0,triggers:["⚽ 3 goals scored","⚡ 1 goal game — late pressure"]}, home:{name:"PSG",logo:"",goals:2,possession:0,shots_on_target:0,corners:0,dangerous_attacks:0,yellow_cards:0,red_cards:0,motivation:{score:9,label:"Title leader",tag:{text:"🏆 Title",color:"#f9a825"},rank:1,points:77},vila:null}, away:{name:"Lyon",logo:"",goals:1,possession:0,shots_on_target:0,corners:0,dangerous_attacks:0,yellow_cards:2,red_cards:0,motivation:{score:10,label:"Relegation battle",tag:{text:"🆘 Relegation",color:"#c62828"},rank:17,points:29},vila:null}, dangerous_attacks_per_min:0 },
+  { fixture_id:1003, league:"Bundesliga", country:"Germany", minute:14, status:"1H", heat_score:18, alert_level:"🟢 LOW", has_full_stats:false, breakdown:{high_pressure:0,red_card_multiplier:0,vila_effect:0,triggers:[]}, home:{name:"Bayern Munich",logo:"",goals:1,possession:0,shots_on_target:0,corners:0,dangerous_attacks:0,yellow_cards:0,red_cards:0,motivation:{score:4,label:"Mid-table",tag:{text:"😴 Nothing at stake",color:"#aaa"},rank:8,points:44},vila:null}, away:{name:"Dortmund",logo:"",goals:0,possession:0,shots_on_target:0,corners:0,dangerous_attacks:0,yellow_cards:0,red_cards:0,motivation:{score:7.5,label:"EL spot",tag:{text:"🔵 EL spot",color:"#0288d1"},rank:6,points:52},vila:null}, dangerous_attacks_per_min:0 },
 ];
 
 function groupByLeague(matches) {
@@ -543,10 +543,10 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
         {/* Divider */}
         <div style={{ width: 1, alignSelf: "stretch", background: "#f0f0f0", flexShrink: 0 }} />
 
-        {/* Teams + Scores — col 1 */}
+        {/* Teams + Scores + Motivation — col 1 */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Home */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+          {/* Home row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flex: 1 }}>
               {m.home.logo
                 ? <img src={m.home.logo} width="15" height="15" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
@@ -556,21 +556,34 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                 {m.home.name}
               </span>
               {m.home.red_cards > 0 && <span style={{ fontSize: 7, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
-              {m.home.motivation?.tag && (
-                <span style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: `${m.home.motivation.tag.color}18`, color: m.home.motivation.tag.color, border: `1px solid ${m.home.motivation.tag.color}44`, whiteSpace: "nowrap" }}>
-                  {m.home.motivation.tag.text}
-                </span>
-              )}
               {isVila && m.home.vila?.isVilaTeam && (
-                <span title={`Late scorer: ${m.home.vila.lateGoalRate}% of last ${m.home.vila.gamesAnalyzed} games`} style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: m.home.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.home.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.home.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
+                <span style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: m.home.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.home.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.home.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
                   ⏱{m.home.vila.lateGoalRate}%
                 </span>
               )}
             </div>
             <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.home.goals}</span>
           </div>
-          {/* Away */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+
+          {/* Home motivation bar */}
+          {(() => {
+            const mot = m.home.motivation;
+            if (!mot) return null;
+            const pct = (mot.score / 10) * 100;
+            const mc = mot.score >= 8 ? "#e53935" : mot.score >= 6 ? "#f57c00" : mot.score >= 5 ? "#1976d2" : "#9e9e9e";
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 5 }}>
+                <div style={{ flex: 1, height: 4, background: "#f0f0f0", borderRadius: 2, overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: `linear-gradient(90deg, ${mc}66, ${mc})`, borderRadius: 2, transition: "width .6s" }} />
+                </div>
+                <span style={{ fontSize: 8, fontWeight: 700, color: mc, minWidth: 14, textAlign: "right", fontFamily: "monospace" }}>{mot.score.toFixed(0)}</span>
+                {mot.tag && <span style={{ fontSize: 7, borderRadius: 10, padding: "1px 5px", fontWeight: 700, background: `${mot.tag.color}15`, color: mot.tag.color, border: `1px solid ${mot.tag.color}33`, whiteSpace: "nowrap" }}>{mot.tag.text}</span>}
+              </div>
+            );
+          })()}
+
+          {/* Away row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flex: 1 }}>
               {m.away.logo
                 ? <img src={m.away.logo} width="15" height="15" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
@@ -580,19 +593,31 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                 {m.away.name}
               </span>
               {m.away.red_cards > 0 && <span style={{ fontSize: 7, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
-              {m.away.motivation?.tag && (
-                <span style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: `${m.away.motivation.tag.color}18`, color: m.away.motivation.tag.color, border: `1px solid ${m.away.motivation.tag.color}44`, whiteSpace: "nowrap" }}>
-                  {m.away.motivation.tag.text}
-                </span>
-              )}
               {isVila && m.away.vila?.isVilaTeam && (
-                <span title={`Late scorer: ${m.away.vila.lateGoalRate}% of last ${m.away.vila.gamesAnalyzed} games`} style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: m.away.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.away.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.away.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
+                <span style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: m.away.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.away.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.away.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
                   ⏱{m.away.vila.lateGoalRate}%
                 </span>
               )}
             </div>
             <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.away.goals}</span>
           </div>
+
+          {/* Away motivation bar */}
+          {(() => {
+            const mot = m.away.motivation;
+            if (!mot) return null;
+            const pct = (mot.score / 10) * 100;
+            const mc = mot.score >= 8 ? "#e53935" : mot.score >= 6 ? "#f57c00" : mot.score >= 5 ? "#1976d2" : "#9e9e9e";
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ flex: 1, height: 4, background: "#f0f0f0", borderRadius: 2, overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: `linear-gradient(90deg, ${mc}66, ${mc})`, borderRadius: 2, transition: "width .6s" }} />
+                </div>
+                <span style={{ fontSize: 8, fontWeight: 700, color: mc, minWidth: 14, textAlign: "right", fontFamily: "monospace" }}>{mot.score.toFixed(0)}</span>
+                {mot.tag && <span style={{ fontSize: 7, borderRadius: 10, padding: "1px 5px", fontWeight: 700, background: `${mot.tag.color}15`, color: mot.tag.color, border: `1px solid ${mot.tag.color}33`, whiteSpace: "nowrap" }}>{mot.tag.text}</span>}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Divider */}
