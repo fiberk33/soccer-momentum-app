@@ -585,10 +585,44 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                   <div style={{ width: `${pct}%`, height: "100%", background: mc, borderRadius: 3, transition: "width .8s ease", minWidth: pct > 0 ? 6 : 0 }} />
                 </div>
                 <span style={{ fontSize: 10, fontWeight: 900, color: mc, minWidth: 18, textAlign: "right", fontFamily: "monospace" }}>{score.toFixed(0)}</span>
-                {tag
-                  ? <span style={{ fontSize: 8, borderRadius: 10, padding: "2px 7px", fontWeight: 700, background: `${tag.color}20`, color: tag.color, border: `1px solid ${tag.color}55`, whiteSpace: "nowrap", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis" }}>{tag.text}</span>
-                  : <span style={{ fontSize: 8, color: "#999", whiteSpace: "nowrap" }}>{label}</span>
-                }
+                {(() => {
+                  // Compute prominent label from score + match state
+                  const hg = m.home.goals || 0;
+                  const ag = m.away.goals || 0;
+                  const isTrailing = hg < ag;
+                  const isLeading = hg > ag;
+                  const isDraw = hg === ag;
+                  const late = m.minute >= 70;
+                  const veryLate = m.minute >= 80;
+
+                  let prominent = null;
+                  if (tag) {
+                    // Standing-based tag takes priority
+                    prominent = { text: tag.text, color: tag.color };
+                  } else if (isTrailing && veryLate) {
+                    prominent = { text: "🚨 MUST WIN", color: "#c62828" };
+                  } else if (isTrailing && late) {
+                    prominent = { text: "⚡ MUST SCORE", color: "#e53935" };
+                  } else if (isTrailing) {
+                    prominent = { text: "⚡ Chasing", color: "#f57c00" };
+                  } else if (isLeading && score <= 4 && veryLate) {
+                    prominent = { text: "🛡️ SAFE", color: "#2e7d32" };
+                  } else if (isLeading && score <= 4) {
+                    prominent = { text: "🛡️ Protecting", color: "#388e3c" };
+                  } else if (isDraw && veryLate) {
+                    prominent = { text: "🔥 MUST SCORE", color: "#7b1fa2" };
+                  } else if (isDraw && late) {
+                    prominent = { text: "⚡ Pushing", color: "#f57c00" };
+                  } else {
+                    prominent = { text: label, color: "#999" };
+                  }
+
+                  return (
+                    <span style={{ fontSize: 8, borderRadius: 10, padding: "2px 7px", fontWeight: 700, background: `${prominent.color}18`, color: prominent.color, border: `1px solid ${prominent.color}44`, whiteSpace: "nowrap", maxWidth: 110, overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {prominent.text}
+                    </span>
+                  );
+                })()}
               </div>
             );
           })()}
@@ -632,10 +666,42 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                   <div style={{ width: `${pct}%`, height: "100%", background: mc, borderRadius: 3, transition: "width .8s ease", minWidth: pct > 0 ? 6 : 0 }} />
                 </div>
                 <span style={{ fontSize: 10, fontWeight: 900, color: mc, minWidth: 18, textAlign: "right", fontFamily: "monospace" }}>{score.toFixed(0)}</span>
-                {tag
-                  ? <span style={{ fontSize: 8, borderRadius: 10, padding: "2px 7px", fontWeight: 700, background: `${tag.color}20`, color: tag.color, border: `1px solid ${tag.color}55`, whiteSpace: "nowrap", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis" }}>{tag.text}</span>
-                  : <span style={{ fontSize: 8, color: "#999", whiteSpace: "nowrap" }}>{label}</span>
-                }
+                {(() => {
+                  const hg = m.home.goals || 0;
+                  const ag = m.away.goals || 0;
+                  const isTrailing = ag < hg;
+                  const isLeading = ag > hg;
+                  const isDraw = hg === ag;
+                  const late = m.minute >= 70;
+                  const veryLate = m.minute >= 80;
+
+                  let prominent = null;
+                  if (tag) {
+                    prominent = { text: tag.text, color: tag.color };
+                  } else if (isTrailing && veryLate) {
+                    prominent = { text: "🚨 MUST WIN", color: "#c62828" };
+                  } else if (isTrailing && late) {
+                    prominent = { text: "⚡ MUST SCORE", color: "#e53935" };
+                  } else if (isTrailing) {
+                    prominent = { text: "⚡ Chasing", color: "#f57c00" };
+                  } else if (isLeading && score <= 4 && veryLate) {
+                    prominent = { text: "🛡️ SAFE", color: "#2e7d32" };
+                  } else if (isLeading && score <= 4) {
+                    prominent = { text: "🛡️ Protecting", color: "#388e3c" };
+                  } else if (isDraw && veryLate) {
+                    prominent = { text: "🔥 MUST SCORE", color: "#7b1fa2" };
+                  } else if (isDraw && late) {
+                    prominent = { text: "⚡ Pushing", color: "#f57c00" };
+                  } else {
+                    prominent = { text: label, color: "#999" };
+                  }
+
+                  return (
+                    <span style={{ fontSize: 8, borderRadius: 10, padding: "2px 7px", fontWeight: 700, background: `${prominent.color}18`, color: prominent.color, border: `1px solid ${prominent.color}44`, whiteSpace: "nowrap", maxWidth: 110, overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {prominent.text}
+                    </span>
+                  );
+                })()}
               </div>
             );
           })()}
