@@ -317,8 +317,8 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
     <div style={{ borderBottom: "1px solid #f0f0f0" }}>
       <div onClick={onToggle} style={{
         display: "flex", alignItems: "flex-start", padding: "10px 10px 10px 14px",
-        cursor: "pointer", background: expanded ? "#fafafa" : "#fff",
-        transition: "background .15s", gap: 8,
+        cursor: "pointer", background: expanded ? "#fafafa" : m.status === "FT" ? "#f9f9f9" : "#fff",
+        transition: "background .15s", gap: 8, opacity: m.status === "FT" ? 0.75 : 1,
       }}>
 
         {/* Minute / Kickoff */}
@@ -332,6 +332,11 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
             <>
               <div style={{ fontSize: 12, fontWeight: 800, color: "#7b1fa2", fontFamily: "monospace", lineHeight: 1.2 }}>HT</div>
               <div style={{ fontSize: 8, color: "#7b1fa2", fontWeight: 600, marginTop: 2 }}>45′</div>
+            </>
+          ) : m.status === "FT" ? (
+            <>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#388e3c", fontFamily: "monospace", lineHeight: 1.2 }}>FT</div>
+              <div style={{ fontSize: 8, color: "#388e3c", fontWeight: 600, marginTop: 2 }}>90′</div>
             </>
           ) : (
             <>
@@ -614,7 +619,7 @@ export default function App() {
   const toggleFanduel = id => setFanduelGames(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   let displayed = [...matches];
-  if (filterLive) displayed = displayed.filter(m => m.status !== "NS");
+  if (filterLive) displayed = displayed.filter(m => m.status !== "NS" && m.status !== "FT");
   if (showFavsOnly) displayed = displayed.filter(m => favourites.has(m.fixture_id));
   if (showFanduelOnly) displayed = displayed.filter(m => fanduelGames.has(m.fixture_id));
   if (filter === "EXTREME") displayed = displayed.filter(m => m.heat_score >= 80);
