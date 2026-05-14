@@ -565,19 +565,24 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
             <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.home.goals}</span>
           </div>
 
-          {/* Home motivation bar */}
+          {/* Home motivation bar - always shown */}
           {(() => {
             const mot = m.home.motivation;
-            if (!mot) return null;
-            const pct = (mot.score / 10) * 100;
-            const mc = mot.score >= 8 ? "#e53935" : mot.score >= 6 ? "#f57c00" : mot.score >= 5 ? "#1976d2" : "#9e9e9e";
+            const score = mot?.score ?? 5;
+            const pct = (score / 10) * 100;
+            const mc = score >= 8 ? "#e53935" : score >= 6 ? "#f57c00" : score >= 5 ? "#1976d2" : "#9e9e9e";
+            const tag = mot?.tag;
+            const label = mot?.label || "In play";
             return (
               <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 5 }}>
-                <div style={{ flex: 1, height: 4, background: "#f0f0f0", borderRadius: 2, overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: `linear-gradient(90deg, ${mc}66, ${mc})`, borderRadius: 2, transition: "width .6s" }} />
+                <div style={{ flex: 1, height: 5, background: "#f0f0f0", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: `linear-gradient(90deg, ${mc}55, ${mc})`, borderRadius: 3, transition: "width .8s ease" }} />
                 </div>
-                <span style={{ fontSize: 8, fontWeight: 700, color: mc, minWidth: 14, textAlign: "right", fontFamily: "monospace" }}>{mot.score.toFixed(0)}</span>
-                {mot.tag && <span style={{ fontSize: 7, borderRadius: 10, padding: "1px 5px", fontWeight: 700, background: `${mot.tag.color}15`, color: mot.tag.color, border: `1px solid ${mot.tag.color}33`, whiteSpace: "nowrap" }}>{mot.tag.text}</span>}
+                <span style={{ fontSize: 9, fontWeight: 800, color: mc, minWidth: 16, textAlign: "right", fontFamily: "monospace" }}>{score.toFixed(0)}</span>
+                {tag
+                  ? <span style={{ fontSize: 7, borderRadius: 10, padding: "1px 6px", fontWeight: 700, background: `${tag.color}15`, color: tag.color, border: `1px solid ${tag.color}44`, whiteSpace: "nowrap", maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis" }}>{tag.text}</span>
+                  : <span style={{ fontSize: 7, color: "#ccc", whiteSpace: "nowrap" }}>{label}</span>
+                }
               </div>
             );
           })()}
@@ -602,19 +607,24 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
             <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.away.goals}</span>
           </div>
 
-          {/* Away motivation bar */}
+          {/* Away motivation bar - always shown */}
           {(() => {
             const mot = m.away.motivation;
-            if (!mot) return null;
-            const pct = (mot.score / 10) * 100;
-            const mc = mot.score >= 8 ? "#e53935" : mot.score >= 6 ? "#f57c00" : mot.score >= 5 ? "#1976d2" : "#9e9e9e";
+            const score = mot?.score ?? 5;
+            const pct = (score / 10) * 100;
+            const mc = score >= 8 ? "#e53935" : score >= 6 ? "#f57c00" : score >= 5 ? "#1976d2" : "#9e9e9e";
+            const tag = mot?.tag;
+            const label = mot?.label || "In play";
             return (
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <div style={{ flex: 1, height: 4, background: "#f0f0f0", borderRadius: 2, overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: `linear-gradient(90deg, ${mc}66, ${mc})`, borderRadius: 2, transition: "width .6s" }} />
+                <div style={{ flex: 1, height: 5, background: "#f0f0f0", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: `linear-gradient(90deg, ${mc}55, ${mc})`, borderRadius: 3, transition: "width .8s ease" }} />
                 </div>
-                <span style={{ fontSize: 8, fontWeight: 700, color: mc, minWidth: 14, textAlign: "right", fontFamily: "monospace" }}>{mot.score.toFixed(0)}</span>
-                {mot.tag && <span style={{ fontSize: 7, borderRadius: 10, padding: "1px 5px", fontWeight: 700, background: `${mot.tag.color}15`, color: mot.tag.color, border: `1px solid ${mot.tag.color}33`, whiteSpace: "nowrap" }}>{mot.tag.text}</span>}
+                <span style={{ fontSize: 9, fontWeight: 800, color: mc, minWidth: 16, textAlign: "right", fontFamily: "monospace" }}>{score.toFixed(0)}</span>
+                {tag
+                  ? <span style={{ fontSize: 7, borderRadius: 10, padding: "1px 6px", fontWeight: 700, background: `${tag.color}15`, color: tag.color, border: `1px solid ${tag.color}44`, whiteSpace: "nowrap", maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis" }}>{tag.text}</span>
+                  : <span style={{ fontSize: 7, color: "#ccc", whiteSpace: "nowrap" }}>{label}</span>
+                }
               </div>
             );
           })()}
