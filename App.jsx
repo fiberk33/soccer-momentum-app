@@ -566,56 +566,7 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
             <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.home.goals}</span>
           </div>
 
-          {/* ── HOME MOTIVATION ROW ── */}
-          {m.status !== "NS" && m.status !== "FT" && (() => {
-            const mot = m.home.motivation;
-            const hg = m.home.goals || 0;
-            const ag = m.away.goals || 0;
-            const late = m.minute >= 70;
-            const veryLate = m.minute >= 80;
 
-            // Score from API or match-state fallback
-            const rawScore = mot?.score != null ? mot.score :
-              hg < ag ? (veryLate ? 9.5 : late ? 8 : 7) :
-              hg > ag ? (veryLate ? 3 : late ? 4 : 5) :
-              (veryLate ? 8.5 : late ? 7 : 5.5);
-            const score = Math.min(10, Math.max(1, rawScore));
-            const pct = Math.round((score / 10) * 100);
-
-            // Color
-            const mc = score >= 8 ? "#d32f2f" : score >= 6 ? "#e65100" : score >= 5 ? "#1565c0" : "#757575";
-
-            // Label
-            let labelText, labelColor;
-            if (mot?.tag) {
-              labelText = mot.tag.text; labelColor = mot.tag.color;
-            } else if (hg < ag && veryLate)  { labelText = "🚨 MUST WIN";    labelColor = "#c62828"; }
-            else if (hg < ag && late)         { labelText = "⚡ MUST SCORE";  labelColor = "#e53935"; }
-            else if (hg < ag)                 { labelText = "⚡ Chasing";     labelColor = "#f57c00"; }
-            else if (hg > ag && score <= 4 && veryLate) { labelText = "🛡️ SAFE";  labelColor = "#2e7d32"; }
-            else if (hg > ag && score <= 4)   { labelText = "🛡️ Protecting"; labelColor = "#388e3c"; }
-            else if (hg === ag && veryLate)   { labelText = "🔥 MUST SCORE"; labelColor = "#6a1b9a"; }
-            else if (hg === ag && late)       { labelText = "⚡ Pushing";     labelColor = "#f57c00"; }
-            else                              { labelText = mot?.label || "In play"; labelColor = "#888"; }
-
-            return (
-              <div style={{ marginBottom: 6 }}>
-                {/* Label badge */}
-                <div style={{ marginBottom: 3 }}>
-                  <span style={{ display: "inline-block", fontSize: 9, fontWeight: 800, borderRadius: 8, padding: "2px 8px", background: `${labelColor}22`, color: labelColor, border: `1.5px solid ${labelColor}66` }}>
-                    {labelText}
-                  </span>
-                </div>
-                {/* Progress bar */}
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <div style={{ flex: 1, height: 7, background: "#ddd", borderRadius: 4 }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: mc, borderRadius: 4, minWidth: 8 }} />
-                  </div>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: mc, fontFamily: "monospace", minWidth: 20, textAlign: "right" }}>{score.toFixed(0)}</span>
-                </div>
-              </div>
-            );
-          })()}
           {/* Away row */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flex: 1 }}>
@@ -636,50 +587,7 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
             <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.away.goals}</span>
           </div>
 
-          {/* ── AWAY MOTIVATION ROW ── */}
-          {m.status !== "NS" && m.status !== "FT" && (() => {
-            const mot = m.away.motivation;
-            const hg = m.home.goals || 0;
-            const ag = m.away.goals || 0;
-            const late = m.minute >= 70;
-            const veryLate = m.minute >= 80;
 
-            const rawScore = mot?.score != null ? mot.score :
-              ag < hg ? (veryLate ? 9.5 : late ? 8 : 7) :
-              ag > hg ? (veryLate ? 3 : late ? 4 : 5) :
-              (veryLate ? 8.5 : late ? 7 : 5.5);
-            const score = Math.min(10, Math.max(1, rawScore));
-            const pct = Math.round((score / 10) * 100);
-            const mc = score >= 8 ? "#d32f2f" : score >= 6 ? "#e65100" : score >= 5 ? "#1565c0" : "#757575";
-
-            let labelText, labelColor;
-            if (mot?.tag) {
-              labelText = mot.tag.text; labelColor = mot.tag.color;
-            } else if (ag < hg && veryLate)  { labelText = "🚨 MUST WIN";    labelColor = "#c62828"; }
-            else if (ag < hg && late)         { labelText = "⚡ MUST SCORE";  labelColor = "#e53935"; }
-            else if (ag < hg)                 { labelText = "⚡ Chasing";     labelColor = "#f57c00"; }
-            else if (ag > hg && score <= 4 && veryLate) { labelText = "🛡️ SAFE";  labelColor = "#2e7d32"; }
-            else if (ag > hg && score <= 4)   { labelText = "🛡️ Protecting"; labelColor = "#388e3c"; }
-            else if (hg === ag && veryLate)   { labelText = "🔥 MUST SCORE"; labelColor = "#6a1b9a"; }
-            else if (hg === ag && late)       { labelText = "⚡ Pushing";     labelColor = "#f57c00"; }
-            else                              { labelText = mot?.label || "In play"; labelColor = "#888"; }
-
-            return (
-              <div>
-                <div style={{ marginBottom: 3 }}>
-                  <span style={{ display: "inline-block", fontSize: 9, fontWeight: 800, borderRadius: 8, padding: "2px 8px", background: `${labelColor}22`, color: labelColor, border: `1.5px solid ${labelColor}66` }}>
-                    {labelText}
-                  </span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <div style={{ flex: 1, height: 7, background: "#ddd", borderRadius: 4 }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: mc, borderRadius: 4, minWidth: 8 }} />
-                  </div>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: mc, fontFamily: "monospace", minWidth: 20, textAlign: "right" }}>{score.toFixed(0)}</span>
-                </div>
-              </div>
-            );
-          })()}
                 {(() => {
                   const hg = m.home.goals || 0;
                   const ag = m.away.goals || 0;
@@ -808,6 +716,66 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
           }}>FD</button>
         </div>
       </div>
+
+      {/* ── MOTIVATION BARS — full width below match row ── */}
+      {m.status !== "NS" && m.status !== "FT" && (
+        <div style={{ padding: "0 14px 10px 14px", background: expanded ? "#fafafa" : m.status === "FT" ? "#f9f9f9" : "#fff" }}>
+          {[
+            { team: m.home, goals: m.home.goals, oppGoals: m.away.goals },
+            { team: m.away, goals: m.away.goals, oppGoals: m.home.goals },
+          ].map(({ team, goals, oppGoals }, idx) => {
+            const mot = team.motivation;
+            const late = m.minute >= 70;
+            const veryLate = m.minute >= 80;
+            const trailing = goals < oppGoals;
+            const leading = goals > oppGoals;
+            const drawing = goals === oppGoals;
+
+            const rawScore = mot?.score != null ? mot.score :
+              trailing ? (veryLate ? 9.5 : late ? 8 : 7) :
+              leading  ? (veryLate ? 3   : late ? 4 : 5) :
+              (veryLate ? 8.5 : late ? 7 : 5.5);
+            const score = Math.min(10, Math.max(1, rawScore));
+            const pct = Math.round((score / 10) * 100);
+            const mc = score >= 8 ? "#d32f2f" : score >= 6 ? "#e65100" : score >= 5 ? "#1565c0" : "#757575";
+
+            let labelText, labelColor;
+            if (mot?.tag) {
+              labelText = mot.tag.text; labelColor = mot.tag.color;
+            } else if (trailing && veryLate) { labelText = "🚨 MUST WIN";    labelColor = "#c62828"; }
+            else if (trailing && late)       { labelText = "⚡ MUST SCORE";  labelColor = "#e53935"; }
+            else if (trailing)               { labelText = "⚡ Chasing";     labelColor = "#f57c00"; }
+            else if (leading && score <= 4 && veryLate) { labelText = "🛡️ SAFE"; labelColor = "#2e7d32"; }
+            else if (leading && score <= 4)  { labelText = "🛡️ Protecting"; labelColor = "#388e3c"; }
+            else if (drawing && veryLate)    { labelText = "🔥 MUST SCORE"; labelColor = "#6a1b9a"; }
+            else if (drawing && late)        { labelText = "⚡ Pushing";     labelColor = "#f57c00"; }
+            else                             { labelText = mot?.label || "In play"; labelColor = "#aaa"; }
+
+            return (
+              <div key={idx} style={{ marginBottom: idx === 0 ? 6 : 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  {/* Team name */}
+                  <div style={{ fontSize: 10, color: "#888", minWidth: 90, maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {team.name}
+                  </div>
+                  {/* Bar */}
+                  <div style={{ flex: 1, height: 8, background: "#e0e0e0", borderRadius: 4 }}>
+                    <div style={{ width: `${pct}%`, height: "100%", background: mc, borderRadius: 4, minWidth: 6, transition: "width .6s" }} />
+                  </div>
+                  {/* Score */}
+                  <div style={{ fontSize: 11, fontWeight: 800, color: mc, fontFamily: "monospace", minWidth: 18, textAlign: "right" }}>{score.toFixed(0)}</div>
+                  {/* Label */}
+                  <div style={{ minWidth: 90 }}>
+                    <span style={{ fontSize: 9, fontWeight: 800, borderRadius: 8, padding: "2px 7px", background: `${labelColor}18`, color: labelColor, border: `1.5px solid ${labelColor}55`, whiteSpace: "nowrap" }}>
+                      {labelText}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {expanded && <MatchDetail m={m} />}
     </div>
