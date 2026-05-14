@@ -21,7 +21,7 @@ const FEATURED_LEAGUE_IDS = [
 // - Standing within 3pts of a key position = maximum motivation
 
 function computeMotivationIndex(standing, leagueSize) {
-  if (!standing) return { score: 5, label: "Unknown", tag: null };
+  if (!standing) return null; // null = use match-state fallback in caller
 
   const rank = standing.rank;
   const points = standing.points;
@@ -109,6 +109,59 @@ function computeMotivationIndex(standing, leagueSize) {
     rank,
     points,
   };
+}
+
+// ─── MATCH-STATE MOTIVATION FALLBACK ─────────────────────────────────────────
+// When no standings data available, derive motivation purely from match context
+// This ensures EVERY team shows a motivation bar
+function computeMatchStateMot(teamGoals, oppGoals, minute, isHome) {
+  const diff = teamGoals - oppGoals;
+  const isTrailing = diff < 0;
+  const isLeading = diff > 0;
+  const isDraw = diff === 0;
+  const isLate = minute >= 70;
+  const isVeryLate = minute >= 80;
+
+  let score = 5;
+  let label = "In play";
+  let tag = null;
+
+  if (isTrailing) {
+    if (Math.abs(diff) >= 3) {
+      score = isVeryLate ? 9 : 7;
+      label = "Chasing hard";
+      tag = { text: "⚡ Chasing", color: "#e53935" };
+    } else if (Math.abs(diff) === 2) {
+      score = isVeryLate ? 8.5 : 7;
+      label = "Need goals";
+      tag = { text: "⚡ Need goals", color: "#f57c00" };
+    } else {
+      score = isVeryLate ? 9.5 : isLate ? 8.5 : 7;
+      label = "Pushing for eq.";
+      tag = { text: "⚡ Equalizer hunt", color: "#f57c00" };
+    }
+  } else if (isLeading) {
+    if (diff >= 3) {
+      score = 3;
+      label = "Comfortable";
+      tag = { text: "🛡️ Sitting back", color: "#aaa" };
+    } else if (diff === 2) {
+      score = isLate ? 3.5 : 5;
+      label = isLate ? "Managing lead" : "In control";
+      tag = isLate ? { text: "🛡️ Managing", color: "#aaa" } : null;
+    } else {
+      score = isVeryLate ? 5 : isLate ? 6 : 7;
+      label = "1 goal lead";
+      tag = isVeryLate ? { text: "🛡️ Protecting", color: "#888" } : null;
+    }
+  } else {
+    // Draw
+    score = isVeryLate ? 8 : isLate ? 7 : 5.5;
+    label = isDraw && isVeryLate ? "Must score" : "Level";
+    tag = isVeryLate ? { text: "⚡ Must score", color: "#7b1fa2" } : null;
+  }
+
+  return { score: Math.min(10, Math.max(1, score)), label, tag, rank: null, points: null };
 }
 
 // ─── MOTIVATION → GOAL RATE MULTIPLIER ───────────────────────────────────────
@@ -391,11 +444,15 @@ export default async function handler(req, res) {
       const isVilaWindow2H = minute >= 75 && minute <= 93;
       const isVilaWindow = isVilaWindow1H || isVilaWindow2H;
 
-      // Compute motivation for each team
+      // Compute motivation: use standings if available, else match-state fallback
       const homeStanding = teamStandingMap[homeId];
       const awayStanding = teamStandingMap[awayId];
-      const homeMot = computeMotivationIndex(homeStanding, leagueSize);
-      const awayMot = computeMotivationIndex(awayStanding, leagueSize);
+      const homeGoalsCur = fx.goals.home ?? 0;
+      const awayGoalsCur = fx.goals.away ?? 0;
+      const homeMot = computeMotivationIndex(homeStanding, leagueSize)
+        || computeMatchStateMot(homeGoalsCur, awayGoalsCur, minute, true);
+      const awayMot = computeMotivationIndex(awayStanding, leagueSize)
+        || computeMatchStateMot(awayGoalsCur, homeGoalsCur, minute, false);
 
       const homeHistory = teamHistoryMap[homeId] || null;
       const awayHistory = teamHistoryMap[awayId] || null;
@@ -491,8 +548,10 @@ export default async function handler(req, res) {
       const awayId = fx.teams.away.id;
       const lid = fx.league.id;
       const leagueSize = leagueSizeMap[lid] || 20;
-      const homeMot = computeMotivationIndex(teamStandingMap[homeId], leagueSize);
-      const awayMot = computeMotivationIndex(teamStandingMap[awayId], leagueSize);
+      const homeMot = computeMotivationIndex(teamStandingMap[homeId], leagueSize)
+        || { score: 5, label: "Pre-match", tag: null, rank: null, points: null };
+      const awayMot = computeMotivationIndex(teamStandingMap[awayId], leagueSize)
+        || { score: 5, label: "Pre-match", tag: null, rank: null, points: null };
 
       return {
         fixture_id: fx.fixture.id, league: fx.league.name, country: fx.league.country,
