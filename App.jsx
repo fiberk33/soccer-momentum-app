@@ -431,7 +431,7 @@ function calcGoalProb(m) {
   // ── SCALE TO 1–10 ──────────────────────────────────────────────────────────
   // 0% → 1, 100% → 10, calibrated so:
   // P=0.50 (50%) → ~5.5, P=0.75 (75%) → ~7.8, P=0.90 (90%) → ~9.1
-  const rawScore = 1 + (probAtLeastOneGoal * 9);
+  const rawScore = Math.max(1, 1 + (probAtLeastOneGoal * 9));
   const final = Math.min(10, Math.max(1, Math.round(rawScore * 10) / 10));
   const rounded = Math.round(final);
 
@@ -545,12 +545,13 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
 
         {/* Teams + Scores + Motivation — col 1 */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Home row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+
+          {/* ── HOME TEAM ── */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flex: 1 }}>
               {m.home.logo
-                ? <img src={m.home.logo} width="15" height="15" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
-                : <div style={{ width: 15, height: 15, background: "#e8e8e8", borderRadius: 2, flexShrink: 0 }} />
+                ? <img src={m.home.logo} width="14" height="14" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
+                : <div style={{ width: 14, height: 14, background: "#e8e8e8", borderRadius: 2, flexShrink: 0 }} />
               }
               <span style={{ fontSize: 12, color: homeWin ? "#111" : "#555", fontWeight: homeWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {m.home.name}
@@ -565,68 +566,56 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
             <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.home.goals}</span>
           </div>
 
-          {/* Home motivation bar - always shown */}
-          {(() => {
+          {/* ── HOME MOTIVATION ROW ── */}
+          {m.status !== "NS" && m.status !== "FT" && (() => {
             const mot = m.home.motivation;
-            const score = mot?.score != null ? mot.score : (
-              // Fallback: derive from match state when API has no standings
-              m.status === "FT" ? 5 :
-              m.home.goals > m.away.goals ? (m.minute > 75 ? 3.5 : 5) :
-              m.home.goals < m.away.goals ? (m.minute > 75 ? 9 : 7) :
-              m.minute > 75 ? 8 : 5.5
-            );
-            const pct = (score / 10) * 100;
-            const mc = score >= 8 ? "#e53935" : score >= 6 ? "#f57c00" : score >= 5 ? "#1976d2" : "#9e9e9e";
-            const tag = mot?.tag;
-            const label = mot?.label || "In play";
+            const hg = m.home.goals || 0;
+            const ag = m.away.goals || 0;
+            const late = m.minute >= 70;
+            const veryLate = m.minute >= 80;
+
+            // Score from API or match-state fallback
+            const rawScore = mot?.score != null ? mot.score :
+              hg < ag ? (veryLate ? 9.5 : late ? 8 : 7) :
+              hg > ag ? (veryLate ? 3 : late ? 4 : 5) :
+              (veryLate ? 8.5 : late ? 7 : 5.5);
+            const score = Math.min(10, Math.max(1, rawScore));
+            const pct = Math.round((score / 10) * 100);
+
+            // Color
+            const mc = score >= 8 ? "#d32f2f" : score >= 6 ? "#e65100" : score >= 5 ? "#1565c0" : "#757575";
+
+            // Label
+            let labelText, labelColor;
+            if (mot?.tag) {
+              labelText = mot.tag.text; labelColor = mot.tag.color;
+            } else if (hg < ag && veryLate)  { labelText = "🚨 MUST WIN";    labelColor = "#c62828"; }
+            else if (hg < ag && late)         { labelText = "⚡ MUST SCORE";  labelColor = "#e53935"; }
+            else if (hg < ag)                 { labelText = "⚡ Chasing";     labelColor = "#f57c00"; }
+            else if (hg > ag && score <= 4 && veryLate) { labelText = "🛡️ SAFE";  labelColor = "#2e7d32"; }
+            else if (hg > ag && score <= 4)   { labelText = "🛡️ Protecting"; labelColor = "#388e3c"; }
+            else if (hg === ag && veryLate)   { labelText = "🔥 MUST SCORE"; labelColor = "#6a1b9a"; }
+            else if (hg === ag && late)       { labelText = "⚡ Pushing";     labelColor = "#f57c00"; }
+            else                              { labelText = mot?.label || "In play"; labelColor = "#888"; }
+
             return (
-              <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
-                <div style={{ flex: 1, height: 6, background: "#e0e0e0", borderRadius: 3, overflow: "hidden", border: "1px solid #d0d0d0" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: mc, borderRadius: 3, transition: "width .8s ease", minWidth: pct > 0 ? 6 : 0 }} />
+              <div style={{ marginBottom: 6 }}>
+                {/* Label badge */}
+                <div style={{ marginBottom: 3 }}>
+                  <span style={{ display: "inline-block", fontSize: 9, fontWeight: 800, borderRadius: 8, padding: "2px 8px", background: `${labelColor}22`, color: labelColor, border: `1.5px solid ${labelColor}66` }}>
+                    {labelText}
+                  </span>
                 </div>
-                <span style={{ fontSize: 10, fontWeight: 900, color: mc, minWidth: 18, textAlign: "right", fontFamily: "monospace" }}>{score.toFixed(0)}</span>
-                {(() => {
-                  // Compute prominent label from score + match state
-                  const hg = m.home.goals || 0;
-                  const ag = m.away.goals || 0;
-                  const isTrailing = hg < ag;
-                  const isLeading = hg > ag;
-                  const isDraw = hg === ag;
-                  const late = m.minute >= 70;
-                  const veryLate = m.minute >= 80;
-
-                  let prominent = null;
-                  if (tag) {
-                    // Standing-based tag takes priority
-                    prominent = { text: tag.text, color: tag.color };
-                  } else if (isTrailing && veryLate) {
-                    prominent = { text: "🚨 MUST WIN", color: "#c62828" };
-                  } else if (isTrailing && late) {
-                    prominent = { text: "⚡ MUST SCORE", color: "#e53935" };
-                  } else if (isTrailing) {
-                    prominent = { text: "⚡ Chasing", color: "#f57c00" };
-                  } else if (isLeading && score <= 4 && veryLate) {
-                    prominent = { text: "🛡️ SAFE", color: "#2e7d32" };
-                  } else if (isLeading && score <= 4) {
-                    prominent = { text: "🛡️ Protecting", color: "#388e3c" };
-                  } else if (isDraw && veryLate) {
-                    prominent = { text: "🔥 MUST SCORE", color: "#7b1fa2" };
-                  } else if (isDraw && late) {
-                    prominent = { text: "⚡ Pushing", color: "#f57c00" };
-                  } else {
-                    prominent = { text: label, color: "#999" };
-                  }
-
-                  return (
-                    <span style={{ fontSize: 8, borderRadius: 10, padding: "2px 7px", fontWeight: 700, background: `${prominent.color}18`, color: prominent.color, border: `1px solid ${prominent.color}44`, whiteSpace: "nowrap", maxWidth: 110, overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {prominent.text}
-                    </span>
-                  );
-                })()}
+                {/* Progress bar */}
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <div style={{ flex: 1, height: 7, background: "#ddd", borderRadius: 4 }}>
+                    <div style={{ width: `${pct}%`, height: "100%", background: mc, borderRadius: 4, minWidth: 8 }} />
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: mc, fontFamily: "monospace", minWidth: 20, textAlign: "right" }}>{score.toFixed(0)}</span>
+                </div>
               </div>
             );
           })()}
-
           {/* Away row */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flex: 1 }}>
@@ -647,25 +636,50 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
             <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.away.goals}</span>
           </div>
 
-          {/* Away motivation bar - always shown */}
-          {(() => {
+          {/* ── AWAY MOTIVATION ROW ── */}
+          {m.status !== "NS" && m.status !== "FT" && (() => {
             const mot = m.away.motivation;
-            const score = mot?.score != null ? mot.score : (
-              m.status === "FT" ? 5 :
-              m.away.goals > m.home.goals ? (m.minute > 75 ? 3.5 : 5) :
-              m.away.goals < m.home.goals ? (m.minute > 75 ? 9 : 7) :
-              m.minute > 75 ? 8 : 5.5
-            );
-            const pct = (score / 10) * 100;
-            const mc = score >= 8 ? "#e53935" : score >= 6 ? "#f57c00" : score >= 5 ? "#1976d2" : "#9e9e9e";
-            const tag = mot?.tag;
-            const label = mot?.label || "In play";
+            const hg = m.home.goals || 0;
+            const ag = m.away.goals || 0;
+            const late = m.minute >= 70;
+            const veryLate = m.minute >= 80;
+
+            const rawScore = mot?.score != null ? mot.score :
+              ag < hg ? (veryLate ? 9.5 : late ? 8 : 7) :
+              ag > hg ? (veryLate ? 3 : late ? 4 : 5) :
+              (veryLate ? 8.5 : late ? 7 : 5.5);
+            const score = Math.min(10, Math.max(1, rawScore));
+            const pct = Math.round((score / 10) * 100);
+            const mc = score >= 8 ? "#d32f2f" : score >= 6 ? "#e65100" : score >= 5 ? "#1565c0" : "#757575";
+
+            let labelText, labelColor;
+            if (mot?.tag) {
+              labelText = mot.tag.text; labelColor = mot.tag.color;
+            } else if (ag < hg && veryLate)  { labelText = "🚨 MUST WIN";    labelColor = "#c62828"; }
+            else if (ag < hg && late)         { labelText = "⚡ MUST SCORE";  labelColor = "#e53935"; }
+            else if (ag < hg)                 { labelText = "⚡ Chasing";     labelColor = "#f57c00"; }
+            else if (ag > hg && score <= 4 && veryLate) { labelText = "🛡️ SAFE";  labelColor = "#2e7d32"; }
+            else if (ag > hg && score <= 4)   { labelText = "🛡️ Protecting"; labelColor = "#388e3c"; }
+            else if (hg === ag && veryLate)   { labelText = "🔥 MUST SCORE"; labelColor = "#6a1b9a"; }
+            else if (hg === ag && late)       { labelText = "⚡ Pushing";     labelColor = "#f57c00"; }
+            else                              { labelText = mot?.label || "In play"; labelColor = "#888"; }
+
             return (
-              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div style={{ flex: 1, height: 6, background: "#e0e0e0", borderRadius: 3, overflow: "hidden", border: "1px solid #d0d0d0" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: mc, borderRadius: 3, transition: "width .8s ease", minWidth: pct > 0 ? 6 : 0 }} />
+              <div>
+                <div style={{ marginBottom: 3 }}>
+                  <span style={{ display: "inline-block", fontSize: 9, fontWeight: 800, borderRadius: 8, padding: "2px 8px", background: `${labelColor}22`, color: labelColor, border: `1.5px solid ${labelColor}66` }}>
+                    {labelText}
+                  </span>
                 </div>
-                <span style={{ fontSize: 10, fontWeight: 900, color: mc, minWidth: 18, textAlign: "right", fontFamily: "monospace" }}>{score.toFixed(0)}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <div style={{ flex: 1, height: 7, background: "#ddd", borderRadius: 4 }}>
+                    <div style={{ width: `${pct}%`, height: "100%", background: mc, borderRadius: 4, minWidth: 8 }} />
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: mc, fontFamily: "monospace", minWidth: 20, textAlign: "right" }}>{score.toFixed(0)}</span>
+                </div>
+              </div>
+            );
+          })()}
                 {(() => {
                   const hg = m.home.goals || 0;
                   const ag = m.away.goals || 0;
@@ -701,10 +715,7 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                       {prominent.text}
                     </span>
                   );
-                })()}
-              </div>
-            );
-          })()}
+
         </div>
 
         {/* Divider */}
