@@ -352,6 +352,11 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                 {m.home.name}
               </span>
               {m.home.red_cards > 0 && <span style={{ fontSize: 7, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
+              {isVila && m.home.vila?.isVilaTeam && (
+                <span title={`Late scorer: ${m.home.vila.lateGoalRate}% of last ${m.home.vila.gamesAnalyzed} games`} style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: m.home.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.home.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.home.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
+                  ⏱{m.home.vila.lateGoalRate}%
+                </span>
+              )}
             </div>
             <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.home.goals}</span>
           </div>
@@ -366,6 +371,11 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                 {m.away.name}
               </span>
               {m.away.red_cards > 0 && <span style={{ fontSize: 7, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
+              {isVila && m.away.vila?.isVilaTeam && (
+                <span title={`Late scorer: ${m.away.vila.lateGoalRate}% of last ${m.away.vila.gamesAnalyzed} games`} style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: m.away.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.away.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.away.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
+                  ⏱{m.away.vila.lateGoalRate}%
+                </span>
+              )}
             </div>
             <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.away.goals}</span>
           </div>
