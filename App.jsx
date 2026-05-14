@@ -39,67 +39,226 @@ function heatColor(score) {
   return "#43a047";
 }
 
+// ─── MOTIVATION GAUGE ─────────────────────────────────────────────────────────
+function MotivationGauge({ team, side }) {
+  const mot = team.motivation;
+  if (!mot) return null;
+  const score = mot.score || 5;
+  const pct = (score / 10) * 100;
+
+  const color = score >= 8 ? "#e53935"
+    : score >= 6 ? "#f57c00"
+    : score >= 5 ? "#1976d2"
+    : "#9e9e9e";
+
+  const bgGrad = score >= 8
+    ? "linear-gradient(135deg, #fff5f5, #fff)"
+    : score >= 6
+    ? "linear-gradient(135deg, #fff8f0, #fff)"
+    : score >= 5
+    ? "linear-gradient(135deg, #f0f4ff, #fff)"
+    : "linear-gradient(135deg, #f5f5f5, #fff)";
+
+  // Arc SVG — semicircle gauge
+  const r = 28, cx = 36, cy = 36;
+  const arcLen = Math.PI * r; // half circle circumference
+  const filled = (pct / 100) * arcLen;
+
+  return (
+    <div style={{
+      flex: 1, background: bgGrad,
+      borderRadius: 12, border: `1px solid ${color}22`,
+      padding: "10px 10px 8px",
+      display: "flex", flexDirection: "column", alignItems: "center",
+      boxShadow: `0 2px 8px ${color}11`,
+    }}>
+      {/* Team name */}
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#555", marginBottom: 6, textAlign: "center", lineHeight: 1.2 }}>
+        {team.name}
+      </div>
+
+      {/* Semicircle gauge */}
+      <svg width="72" height="42" viewBox="0 0 72 42" style={{ overflow: "visible" }}>
+        {/* Track */}
+        <path
+          d={`M 8,36 A ${r},${r} 0 0,1 64,36`}
+          fill="none" stroke="#f0f0f0" strokeWidth="6" strokeLinecap="round"
+        />
+        {/* Fill */}
+        <path
+          d={`M 8,36 A ${r},${r} 0 0,1 64,36`}
+          fill="none" stroke={color} strokeWidth="6" strokeLinecap="round"
+          strokeDasharray={`${filled} ${arcLen}`}
+          style={{ transition: "stroke-dasharray .8s ease" }}
+        />
+        {/* Score number */}
+        <text x="36" y="33" textAnchor="middle" fontSize="14" fontWeight="900"
+          fill={color} fontFamily="monospace">{score.toFixed(1)}</text>
+        <text x="36" y="43" textAnchor="middle" fontSize="7" fill="#bbb" fontFamily="sans-serif">/10</text>
+      </svg>
+
+      {/* Label */}
+      <div style={{
+        fontSize: 9, fontWeight: 800, color,
+        letterSpacing: "0.05em", marginTop: 2, textAlign: "center",
+      }}>{mot.label?.toUpperCase()}</div>
+
+      {/* Standing tag */}
+      {mot.tag && (
+        <div style={{
+          marginTop: 5, fontSize: 8, fontWeight: 700,
+          background: `${mot.tag.color}15`,
+          color: mot.tag.color,
+          border: `1px solid ${mot.tag.color}33`,
+          borderRadius: 20, padding: "2px 8px",
+          textAlign: "center",
+        }}>{mot.tag.text}</div>
+      )}
+
+      {/* Rank */}
+      {mot.rank && (
+        <div style={{ fontSize: 8, color: "#bbb", marginTop: 4, fontFamily: "monospace" }}>
+          #{mot.rank} · {mot.points}pts
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── EXPANDED DETAIL ──────────────────────────────────────────────────────────
 function MatchDetail({ m }) {
   const hasStats = m.has_full_stats && (m.home.possession > 0 || m.home.shots_on_target > 0);
   const triggers = m.breakdown?.triggers || [];
+  const hasMot = m.home.motivation || m.away.motivation;
 
   return (
-    <div style={{ background: "#f9f9f9", padding: "12px 16px 14px", borderTop: "1px solid #eee" }}>
+    <div style={{ background: "#f9f9f9", padding: "12px 14px 14px", borderTop: "1px solid #eee" }}>
 
-      {/* Heat Score bar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-        <div style={{ fontSize: 11, color: "#aaa", fontFamily: "monospace", minWidth: 75 }}>HEAT SCORE</div>
-        <div style={{ flex: 1, height: 7, background: "#e8e8e8", borderRadius: 4, overflow: "hidden" }}>
-          <div style={{ width: `${m.heat_score}%`, height: "100%", background: heatColor(m.heat_score), borderRadius: 4, transition: "width .6s ease" }} />
+      {/* ── MOTIVATION INDEX PANEL ── */}
+      {hasMot && (
+        <div style={{ marginBottom: 14 }}>
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+            <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, #e0e0e0)" }} />
+            <div style={{ fontSize: 9, fontWeight: 800, color: "#bbb", letterSpacing: "0.12em", whiteSpace: "nowrap" }}>
+              🧠 MOTIVATION INDEX
+            </div>
+            <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, #e0e0e0, transparent)" }} />
+          </div>
+
+          {/* Two gauges side by side */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+            <MotivationGauge team={m.home} side="home" />
+            {/* VS divider */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, flexShrink: 0 }}>
+              <div style={{ width: 1, flex: 1, background: "#eee" }} />
+              <div style={{ fontSize: 9, fontWeight: 800, color: "#ccc" }}>VS</div>
+              <div style={{ width: 1, flex: 1, background: "#eee" }} />
+            </div>
+            <MotivationGauge team={m.away} side="away" />
+          </div>
+
+          {/* Motivation insight banner */}
+          {(() => {
+            const hMot = m.home.motivation?.score || 5;
+            const aMot = m.away.motivation?.score || 5;
+            const hGoals = m.home.goals || 0;
+            const aGoals = m.away.goals || 0;
+            const isDraw = hGoals === aGoals;
+            const hTrailing = hGoals < aGoals;
+            const aTrailing = aGoals < hGoals;
+
+            let insight = null;
+
+            if (hMot <= 4 && !hTrailing && !isDraw)
+              insight = { text: `😴 ${m.home.name} are leading with nothing at stake — expect them to sit back and defend. Low goal risk from them.`, color: "#9e9e9e", bg: "#f5f5f5", border: "#e0e0e0" };
+            else if (aMot <= 4 && !aTrailing && !isDraw)
+              insight = { text: `😴 ${m.away.name} are leading with nothing at stake — expect them to sit back and defend. Low goal risk from them.`, color: "#9e9e9e", bg: "#f5f5f5", border: "#e0e0e0" };
+            else if (hMot >= 9 && hTrailing)
+              insight = { text: `🆘 ${m.home.name} are in a relegation battle and trailing — expect desperate, all-out attack. High goal probability.`, color: "#c62828", bg: "#fff5f5", border: "#ffcdd2" };
+            else if (aMot >= 9 && aTrailing)
+              insight = { text: `🆘 ${m.away.name} are in a relegation battle and trailing — expect desperate, all-out attack. High goal probability.`, color: "#c62828", bg: "#fff5f5", border: "#ffcdd2" };
+            else if (hMot >= 8 && aMot >= 8 && isDraw)
+              insight = { text: `🔥 Both teams have high stakes in this draw — neither can afford to drop points. Expect end-to-end action.`, color: "#e53935", bg: "#fff8f5", border: "#ffccbc" };
+            else if (hMot <= 4 && aMot <= 4)
+              insight = { text: `😴 Both teams have nothing at stake — expect low intensity. Research shows these games have higher goals conceded but lower defensive effort overall.`, color: "#9e9e9e", bg: "#f5f5f5", border: "#e0e0e0" };
+            else if ((hMot >= 8 && isDraw) || (aMot >= 8 && isDraw))
+              insight = { text: `⚡ High-stakes team drawing — they need to win. Expect increased attacking urgency.`, color: "#f57c00", bg: "#fffde7", border: "#ffe082" };
+
+            if (!insight) return null;
+            return (
+              <div style={{ background: insight.bg, border: `1px solid ${insight.border}`, borderRadius: 8, padding: "8px 12px" }}>
+                <div style={{ fontSize: 11, color: insight.color, lineHeight: 1.5 }}>{insight.text}</div>
+              </div>
+            );
+          })()}
         </div>
-        <div style={{ fontSize: 15, fontWeight: 800, color: heatColor(m.heat_score), fontFamily: "monospace", minWidth: 28, textAlign: "right" }}>{m.heat_score}</div>
+      )}
+
+      {/* ── HEAT SCORE BAR ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: "#bbb", letterSpacing: "0.1em", minWidth: 68 }}>HEAT SCORE</div>
+        <div style={{ flex: 1, height: 6, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ width: `${m.heat_score}%`, height: "100%", background: `linear-gradient(90deg, ${heatColor(m.heat_score)}99, ${heatColor(m.heat_score)})`, borderRadius: 3, transition: "width .6s ease" }} />
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: heatColor(m.heat_score), fontFamily: "monospace", minWidth: 24, textAlign: "right" }}>{m.heat_score}</div>
       </div>
 
-      {/* Breakdown bars */}
+      {/* ── HEAT BREAKDOWN CARDS ── */}
       {m.breakdown && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
           {[
-            { label: "Pressure", val: m.breakdown.high_pressure, max: 35, color: "#1e88e5" },
-            { label: "Red Card", val: m.breakdown.red_card_multiplier, max: 30, color: "#e53935" },
-            { label: "Vila", val: m.breakdown.vila_effect, max: 35, color: "#f9a825" },
-          ].map(({ label, val, max, color }) => (
-            <div key={label} style={{ flex: 1, background: "#fff", borderRadius: 8, padding: "8px 6px", border: "1px solid #eee", textAlign: "center" }}>
-              <div style={{ fontSize: 9, color: "#bbb", marginBottom: 4 }}>{label}</div>
-              <div style={{ height: 4, background: "#f0f0f0", borderRadius: 2, marginBottom: 4 }}>
-                <div style={{ width: `${(val / max) * 100}%`, height: "100%", background: color, borderRadius: 2 }} />
+            { label: "Pressure", val: m.breakdown.high_pressure, max: 35, color: "#1976d2", icon: "⚡" },
+            { label: "Red Card", val: m.breakdown.red_card_multiplier, max: 30, color: "#e53935", icon: "🟥" },
+            { label: "Vila", val: m.breakdown.vila_effect, max: 35, color: "#f9a825", icon: "⏱️" },
+          ].map(({ label, val, max, color, icon }) => (
+            <div key={label} style={{ flex: 1, background: "#fff", borderRadius: 8, padding: "8px 6px", border: `1px solid ${val > 0 ? color + "33" : "#eee"}`, textAlign: "center", boxShadow: val > 0 ? `0 2px 6px ${color}15` : "none" }}>
+              <div style={{ fontSize: 12, marginBottom: 3 }}>{icon}</div>
+              <div style={{ fontSize: 8, color: "#bbb", marginBottom: 4, letterSpacing: "0.05em" }}>{label.toUpperCase()}</div>
+              <div style={{ height: 3, background: "#f0f0f0", borderRadius: 2, marginBottom: 4 }}>
+                <div style={{ width: `${(val / max) * 100}%`, height: "100%", background: color, borderRadius: 2, transition: "width .6s" }} />
               </div>
-              <div style={{ fontSize: 11, fontWeight: 700, color }}>{val}<span style={{ color: "#ccc", fontWeight: 400 }}>/{max}</span></div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: val > 0 ? color : "#ccc" }}>{val}<span style={{ fontSize: 9, fontWeight: 400, color: "#ddd" }}>/{max}</span></div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Stats grid */}
+      {/* ── STATS GRID ── */}
       {hasStats && (
         <div style={{ background: "#fff", borderRadius: 8, border: "1px solid #eee", overflow: "hidden", marginBottom: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", padding: "6px 12px", background: "#f5f5f5", borderBottom: "1px solid #eee" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textAlign: "right" }}>{m.home.name}</div>
+            <div style={{ fontSize: 10, color: "#ccc", textAlign: "center", padding: "0 10px" }}>STATS</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#888" }}>{m.away.name}</div>
+          </div>
           {[
-            { label: "Possession", hv: `${m.home.possession}%`, av: `${m.away.possession}%` },
-            { label: "Shots on Target", hv: m.home.shots_on_target, av: m.away.shots_on_target },
-            { label: "Corners", hv: m.home.corners, av: m.away.corners },
-            { label: "Danger Attacks", hv: m.home.dangerous_attacks, av: m.away.dangerous_attacks },
-            { label: "Yellow Cards", hv: m.home.yellow_cards, av: m.away.yellow_cards },
-            { label: "Red Cards", hv: m.home.red_cards, av: m.away.red_cards },
-          ].map(({ label, hv, av }, i) => (
-            <div key={label} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", padding: "7px 12px", background: i % 2 === 0 ? "#fff" : "#fafafa", borderBottom: i < 5 ? "1px solid #f0f0f0" : "none" }}>
-              <div style={{ fontSize: 12, color: "#222", textAlign: "right", fontWeight: 600 }}>{hv}</div>
-              <div style={{ fontSize: 11, color: "#aaa", textAlign: "center", padding: "0 12px", whiteSpace: "nowrap" }}>{label}</div>
-              <div style={{ fontSize: 12, color: "#222", textAlign: "left", fontWeight: 600 }}>{av}</div>
-            </div>
-          ))}
+            { label: "Possession", hv: `${m.home.possession}%`, av: `${m.away.possession}%`, hNum: m.home.possession, aNum: m.away.possession },
+            { label: "Shots on Target", hv: m.home.shots_on_target, av: m.away.shots_on_target, hNum: m.home.shots_on_target, aNum: m.away.shots_on_target },
+            { label: "Corners", hv: m.home.corners, av: m.away.corners, hNum: m.home.corners, aNum: m.away.corners },
+            { label: "Danger Attacks", hv: m.home.dangerous_attacks, av: m.away.dangerous_attacks, hNum: m.home.dangerous_attacks, aNum: m.away.dangerous_attacks },
+            { label: "Yellow Cards", hv: m.home.yellow_cards, av: m.away.yellow_cards, hNum: m.home.yellow_cards, aNum: m.away.yellow_cards },
+            { label: "Red Cards", hv: m.home.red_cards, av: m.away.red_cards, hNum: m.home.red_cards, aNum: m.away.red_cards },
+          ].map(({ label, hv, av, hNum, aNum }, i) => {
+            const homeWins = hNum > aNum;
+            const awayWins = aNum > hNum;
+            return (
+              <div key={label} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", padding: "7px 12px", background: i % 2 === 0 ? "#fff" : "#fafafa", borderBottom: i < 5 ? "1px solid #f0f0f0" : "none", alignItems: "center" }}>
+                <div style={{ fontSize: 12, color: homeWins ? "#111" : "#888", textAlign: "right", fontWeight: homeWins ? 700 : 400 }}>{hv}</div>
+                <div style={{ fontSize: 10, color: "#ccc", textAlign: "center", padding: "0 10px", whiteSpace: "nowrap" }}>{label}</div>
+                <div style={{ fontSize: 12, color: awayWins ? "#111" : "#888", textAlign: "left", fontWeight: awayWins ? 700 : 400 }}>{av}</div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Triggers */}
+      {/* ── TRIGGERS ── */}
       {triggers.length > 0 && (
         <div style={{ background: "#fff", borderRadius: 8, border: "1px solid #eee", padding: "8px 12px" }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: "#ccc", letterSpacing: "0.1em", marginBottom: 6 }}>SIGNALS</div>
           {triggers.map((t, i) => (
-            <div key={i} style={{ fontSize: 11, color: "#888", marginBottom: i < triggers.length - 1 ? 4 : 0 }}>{t}</div>
+            <div key={i} style={{ fontSize: 11, color: "#777", marginBottom: i < triggers.length - 1 ? 4 : 0, paddingLeft: 4, borderLeft: "2px solid #f0f0f0" }}>{t}</div>
           ))}
         </div>
       )}
@@ -179,6 +338,39 @@ function calcGoalProb(m) {
   }
 
   lambda *= stateMultiplier;
+
+  // ── MULTIPLIER 1b: MOTIVATION INDEX ────────────────────────────────────────
+  // Research (Caley 2025): "Nothing to play for" teams show statistically
+  // significant drop in defensive intensity — MORE goals conceded, less structure
+  const homeMot = m.home.motivation?.score || 5;
+  const awayMot = m.away.motivation?.score || 5;
+  const homeGoals = m.home.goals || 0;
+  const awayGoals = m.away.goals || 0;
+  const homeTrailing = homeGoals < awayGoals;
+  const awayTrailing = awayGoals < homeGoals;
+  const bothDrawing = homeGoals === awayGoals;
+
+  // High motivation trailing team = max aggression (Skripnikov 2024)
+  if (homeTrailing && homeMot >= 8) lambda *= 1.55;
+  else if (homeTrailing && homeMot >= 6) lambda *= 1.30;
+  else if (homeTrailing && homeMot <= 4) lambda *= 1.10; // still tries but less urgent
+
+  if (awayTrailing && awayMot >= 8) lambda *= 1.55;
+  else if (awayTrailing && awayMot >= 6) lambda *= 1.30;
+  else if (awayTrailing && awayMot <= 4) lambda *= 1.10;
+
+  // Low motivation leading team = conserving energy (Caley 2025)
+  if (!homeTrailing && !bothDrawing && homeMot <= 4) lambda *= 0.65;
+  if (!awayTrailing && !bothDrawing && awayMot <= 4) lambda *= 0.65;
+
+  // Both high motivation + draw = both going for it
+  if (bothDrawing && homeMot >= 8 && awayMot >= 8) lambda *= 1.35;
+  // Both low motivation + draw = happy with point, game stagnates
+  else if (bothDrawing && homeMot <= 4 && awayMot <= 4) lambda *= 0.75;
+
+  // Defending team with low motivation = more porous defense (Caley 2025)
+  if (homeMot <= 4) lambda *= 1.15; // easier to score against them
+  if (awayMot <= 4) lambda *= 1.15;
 
   // ── MULTIPLIER 2: RED CARD (strongest in-game signal) ──────────────────────
   // Red card increases goal rate by ~50% (Bivariate Poisson research)
@@ -364,6 +556,11 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                 {m.home.name}
               </span>
               {m.home.red_cards > 0 && <span style={{ fontSize: 7, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
+              {m.home.motivation?.tag && (
+                <span style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: `${m.home.motivation.tag.color}18`, color: m.home.motivation.tag.color, border: `1px solid ${m.home.motivation.tag.color}44`, whiteSpace: "nowrap" }}>
+                  {m.home.motivation.tag.text}
+                </span>
+              )}
               {isVila && m.home.vila?.isVilaTeam && (
                 <span title={`Late scorer: ${m.home.vila.lateGoalRate}% of last ${m.home.vila.gamesAnalyzed} games`} style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: m.home.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.home.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.home.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
                   ⏱{m.home.vila.lateGoalRate}%
@@ -383,6 +580,11 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                 {m.away.name}
               </span>
               {m.away.red_cards > 0 && <span style={{ fontSize: 7, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
+              {m.away.motivation?.tag && (
+                <span style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: `${m.away.motivation.tag.color}18`, color: m.away.motivation.tag.color, border: `1px solid ${m.away.motivation.tag.color}44`, whiteSpace: "nowrap" }}>
+                  {m.away.motivation.tag.text}
+                </span>
+              )}
               {isVila && m.away.vila?.isVilaTeam && (
                 <span title={`Late scorer: ${m.away.vila.lateGoalRate}% of last ${m.away.vila.gamesAnalyzed} games`} style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: m.away.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.away.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.away.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
                   ⏱{m.away.vila.lateGoalRate}%
