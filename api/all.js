@@ -1,5 +1,6 @@
-// api/all.js — returns live games + today's upcoming fixtures combined
-// Live games come first (sorted by heat score), then upcoming (sorted by kickoff)
+// api/all.js — live + upcoming fixtures with per-team late-goal history
+// Fetches last 10 games per team to compute late-minute scoring skill
+// Vila window badge only shown if team has proven late-goal history
 
 const BASE_URL = "https://v3.football.api-sports.io";
 
@@ -17,6 +18,89 @@ function parseStat(stats, teamIdx, name, fallback = 0) {
   } catch { return fallback; }
 }
 
+// ─── FETCH TEAM LATE-GOAL HISTORY ─────────────────────────────────────────────
+// Analyzes last 10 fixtures for a team to compute:
+// - lateGoalRate: % of games where team scored in 80-93'
+// - htGoalRate: % of games where team scored in 35-45'
+// - lateGoalAvg: avg goals scored in last 10 mins per game
+async function fetchTeamLateHistory(teamId, headers) {
+  try {
+    const r = await fetch(
+      `${BASE_URL}/fixtures?team=${teamId}&last=10&status=FT`,
+      { headers }
+    );
+    const d = await r.json();
+    const fixtures = d.response || [];
+    if (fixtures.length === 0) return null;
+
+    let lateGoals = 0;       // goals scored 80-93'
+    let htGoals = 0;         // goals scored 35-45'
+    let gamesWithLate = 0;   // games team scored in 80-93'
+    let gamesWithHT = 0;     // games team scored in 35-45'
+    let totalGames = fixtures.length;
+
+    for (const fx of fixtures) {
+      const events = fx.events || [];
+      const isHome = fx.teams.home.id === teamId;
+
+      let scoredLate = false;
+      let scoredHT = false;
+
+      for (const ev of events) {
+        if (ev.type !== "Goal") continue;
+        if (ev.team?.id !== teamId) continue;
+        // skip own goals
+        if (ev.detail === "Own Goal") continue;
+
+        const min = ev.time?.elapsed || 0;
+        const extra = ev.time?.extra || 0;
+        const totalMin = min + (extra > 0 ? extra : 0);
+
+        if (totalMin >= 80 || (min === 90 && extra > 0)) {
+          lateGoals++;
+          scoredLate = true;
+        }
+        if (totalMin >= 35 && totalMin <= 45) {
+          htGoals++;
+          scoredHT = true;
+        }
+      }
+
+      if (scoredLate) gamesWithLate++;
+      if (scoredHT) gamesWithHT++;
+    }
+
+    const lateGoalRate = gamesWithLate / totalGames;   // 0-1
+    const htGoalRate = gamesWithHT / totalGames;       // 0-1
+    const lateGoalAvg = lateGoals / totalGames;        // avg late goals/game
+    const htGoalAvg = htGoals / totalGames;
+
+    // Vila score: 0-10 rating of late-scoring ability
+    // >50% games with late goal = strong Vila team
+    const vilaScore80 = Math.round(lateGoalRate * 10 * 10) / 10;
+    const vilaScore35 = Math.round(htGoalRate * 10 * 10) / 10;
+
+    return {
+      teamId,
+      gamesAnalyzed: totalGames,
+      lateGoalRate: Math.round(lateGoalRate * 100),   // as %
+      htGoalRate: Math.round(htGoalRate * 100),
+      lateGoalAvg: Math.round(lateGoalAvg * 100) / 100,
+      htGoalAvg: Math.round(htGoalAvg * 100) / 100,
+      vilaScore80,  // 0-10, how strong late scorer
+      vilaScore35,  // 0-10, how strong HT push scorer
+      // Thresholds: >5/10 = Vila capable, >7/10 = Vila strong
+      isVilaTeam80: lateGoalRate >= 0.4,   // scored late in ≥40% of last 10
+      isVilaTeam35: htGoalRate >= 0.4,
+      isStrongVila80: lateGoalRate >= 0.6, // scored late in ≥60% of last 10
+      isStrongVila35: htGoalRate >= 0.6,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ─── HEAT SCORE ────────────────────────────────────────────────────────────────
 function calcHeatScore(home, away, minute) {
   let score = 0;
   const triggers = [];
@@ -102,39 +186,60 @@ export default async function handler(req, res) {
   try {
     const today = new Date().toISOString().split("T")[0];
 
-    // Fetch live and upcoming in parallel
+    // Step 1: Fetch live + upcoming in parallel
     const [liveRes, upcomingRes] = await Promise.all([
       fetch(`${BASE_URL}/fixtures?live=all`, { headers }),
       fetch(`${BASE_URL}/fixtures?date=${today}&status=NS`, { headers }),
     ]);
-
-    const [liveData, upcomingData] = await Promise.all([
-      liveRes.json(),
-      upcomingRes.json(),
-    ]);
+    const [liveData, upcomingData] = await Promise.all([liveRes.json(), upcomingRes.json()]);
 
     const liveFixtures = liveData.response || [];
     const upcomingFixtures = (upcomingData.response || [])
       .filter(fx => FEATURED_LEAGUE_IDS.includes(fx.league.id))
       .sort((a, b) => new Date(a.fixture.date) - new Date(b.fixture.date));
 
-    // Fetch stats for top live fixtures in parallel
-    const PRIORITY_LIVE = liveFixtures.slice(0, 10);
+    // Step 2: Fetch stats for top 10 live fixtures in parallel
+    const topLive = liveFixtures.slice(0, 10);
     const statsResults = await Promise.allSettled(
-      PRIORITY_LIVE.map(fx =>
-        fetchStatsSafe(fx.fixture.id, headers).then(stats => ({ id: fx.fixture.id, stats }))
-      )
+      topLive.map(fx => fetchStatsSafe(fx.fixture.id, headers).then(s => ({ id: fx.fixture.id, stats: s })))
     );
     const statsMap = {};
     statsResults.forEach(r => { if (r.status === "fulfilled") statsMap[r.value.id] = r.value.stats; });
 
-    // Build live match objects
+    // Step 3: Fetch team history for Vila analysis
+    // Only fetch for live matches in Vila window to save API quota
+    const in1H = m => m.fixture.status.elapsed >= 35 && m.fixture.status.elapsed <= 45;
+    const in2H = m => m.fixture.status.elapsed >= 75 && m.fixture.status.elapsed <= 93;
+    const vilaFixtures = liveFixtures.filter(fx => in1H(fx) || in2H(fx));
+
+    // Collect unique team IDs from Vila window fixtures
+    const vilaTeamIds = new Set();
+    vilaFixtures.forEach(fx => {
+      vilaTeamIds.add(fx.teams.home.id);
+      vilaTeamIds.add(fx.teams.away.id);
+    });
+
+    // Fetch history for each Vila team in parallel (max 8 teams to save quota)
+    const vilaTeamArr = [...vilaTeamIds].slice(0, 8);
+    const historyResults = await Promise.allSettled(
+      vilaTeamArr.map(id => fetchTeamLateHistory(id, headers))
+    );
+    const teamHistoryMap = {};
+    historyResults.forEach((r, i) => {
+      if (r.status === "fulfilled" && r.value) {
+        teamHistoryMap[vilaTeamArr[i]] = r.value;
+      }
+    });
+
+    // Step 4: Build live match objects
     const liveMatches = liveFixtures.map(fx => {
       const fid = fx.fixture.id;
       const stats = statsMap[fid] || [];
       const minute = fx.fixture.status.elapsed || 0;
       const events = fx.events || [];
       const homeId = fx.teams.home.id;
+      const awayId = fx.teams.away.id;
+
       let homeYellow = 0, awayYellow = 0, homeRed = 0, awayRed = 0;
       events.forEach(e => {
         const isHome = e.team?.id === homeId;
@@ -143,9 +248,12 @@ export default async function handler(req, res) {
           if (e.detail === "Red Card" || e.detail === "Second Yellow card") isHome ? homeRed++ : awayRed++;
         }
       });
+
       const hasStats = stats.length > 0;
+
       const home = {
         name: fx.teams.home.name, logo: fx.teams.home.logo || "",
+        id: homeId,
         goals: fx.goals.home ?? 0,
         possession: hasStats ? parseStat(stats, 0, "Ball Possession") : 0,
         shots_on_target: hasStats ? parseStat(stats, 0, "Shots on Goal") : 0,
@@ -157,6 +265,7 @@ export default async function handler(req, res) {
       };
       const away = {
         name: fx.teams.away.name, logo: fx.teams.away.logo || "",
+        id: awayId,
         goals: fx.goals.away ?? 0,
         possession: hasStats ? parseStat(stats, 1, "Ball Possession") : 0,
         shots_on_target: hasStats ? parseStat(stats, 1, "Shots on Goal") : 0,
@@ -166,12 +275,47 @@ export default async function handler(req, res) {
         red_cards: hasStats ? parseStat(stats, 1, "Red Cards") : awayRed,
         favorite: fx.teams.away.winner,
       };
+
+      // Attach team history to each team
+      const homeHistory = teamHistoryMap[homeId] || null;
+      const awayHistory = teamHistoryMap[awayId] || null;
+
+      // Vila analysis: is each team a proven late scorer?
+      const isVilaWindow1H = minute >= 35 && minute <= 45;
+      const isVilaWindow2H = minute >= 75 && minute <= 93;
+
+      home.vila = homeHistory ? {
+        vilaScore: isVilaWindow2H ? homeHistory.vilaScore80 : homeHistory.vilaScore35,
+        lateGoalRate: isVilaWindow2H ? homeHistory.lateGoalRate : homeHistory.htGoalRate,
+        isVilaTeam: isVilaWindow2H ? homeHistory.isVilaTeam80 : homeHistory.isVilaTeam35,
+        isStrongVila: isVilaWindow2H ? homeHistory.isStrongVila80 : homeHistory.isStrongVila35,
+        gamesAnalyzed: homeHistory.gamesAnalyzed,
+      } : null;
+
+      away.vila = awayHistory ? {
+        vilaScore: isVilaWindow2H ? awayHistory.vilaScore80 : awayHistory.vilaScore35,
+        lateGoalRate: isVilaWindow2H ? awayHistory.lateGoalRate : awayHistory.htGoalRate,
+        isVilaTeam: isVilaWindow2H ? awayHistory.isVilaTeam80 : awayHistory.isVilaTeam35,
+        isStrongVila: isVilaWindow2H ? awayHistory.isStrongVila80 : awayHistory.isStrongVila35,
+        gamesAnalyzed: awayHistory.gamesAnalyzed,
+      } : null;
+
       const dapm = +((home.dangerous_attacks + away.dangerous_attacks) / Math.max(minute, 1)).toFixed(2);
       const heat = calcHeatScore(home, away, minute);
-      return { fixture_id: fid, league: fx.league.name, country: fx.league.country, minute, status: fx.fixture.status.short, kickoff: fx.fixture.date, kickoff_display: null, time_until: null, mins_until: null, home, away, dangerous_attacks_per_min: dapm, odds: null, ...heat };
+
+      return {
+        fixture_id: fid,
+        league: fx.league.name, country: fx.league.country,
+        minute, status: fx.fixture.status.short,
+        kickoff: fx.fixture.date, kickoff_display: null, time_until: null, mins_until: null,
+        home, away,
+        dangerous_attacks_per_min: dapm,
+        odds: null,
+        ...heat,
+      };
     }).sort((a, b) => b.heat_score - a.heat_score);
 
-    // Build upcoming match objects
+    // Step 5: Build upcoming match objects
     const now = new Date();
     const upcomingMatches = upcomingFixtures.slice(0, 60).map(fx => {
       const kickoff = new Date(fx.fixture.date);
@@ -179,24 +323,25 @@ export default async function handler(req, res) {
       const diffMins = Math.round(diffMs / 60000);
       const diffHrs = Math.floor(diffMins / 60);
       const remMins = diffMins % 60;
-      const timeLabel = diffMins <= 0 ? "Soon" : diffMins < 60 ? `${diffMins}m` : `${diffHrs}h ${remMins}m`;
-      const kickoffStr = kickoff.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      const timeLabel = diffMins <= 0 ? "Soon"
+        : diffMins < 60 ? `${diffMins}m`
+        : `${diffHrs}h ${remMins}m`;
       return {
         fixture_id: fx.fixture.id,
         league: fx.league.name, country: fx.league.country,
         minute: 0, status: "NS",
-        kickoff: fx.fixture.date, kickoff_display: kickoffStr,
+        kickoff: fx.fixture.date,
+        kickoff_display: kickoff.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         time_until: timeLabel, mins_until: diffMins,
         heat_score: 0, alert_level: "⏰ UPCOMING",
         has_full_stats: false,
         breakdown: { high_pressure: 0, red_card_multiplier: 0, vila_effect: 0, triggers: [] },
-        home: { name: fx.teams.home.name, logo: fx.teams.home.logo || "", goals: null, possession: 0, shots_on_target: 0, corners: 0, dangerous_attacks: 0, yellow_cards: 0, red_cards: 0, favorite: fx.teams.home.winner },
-        away: { name: fx.teams.away.name, logo: fx.teams.away.logo || "", goals: null, possession: 0, shots_on_target: 0, corners: 0, dangerous_attacks: 0, yellow_cards: 0, red_cards: 0, favorite: fx.teams.away.winner },
+        home: { name: fx.teams.home.name, logo: fx.teams.home.logo || "", id: fx.teams.home.id, goals: null, possession: 0, shots_on_target: 0, corners: 0, dangerous_attacks: 0, yellow_cards: 0, red_cards: 0, favorite: fx.teams.home.winner, vila: null },
+        away: { name: fx.teams.away.name, logo: fx.teams.away.logo || "", id: fx.teams.away.id, goals: null, possession: 0, shots_on_target: 0, corners: 0, dangerous_attacks: 0, yellow_cards: 0, red_cards: 0, favorite: fx.teams.away.winner, vila: null },
         dangerous_attacks_per_min: 0, odds: null,
       };
     });
 
-    // Combine: live first, then upcoming
     const matches = [...liveMatches, ...upcomingMatches];
 
     return res.status(200).json({
@@ -204,6 +349,7 @@ export default async function handler(req, res) {
       count: matches.length,
       live_count: liveMatches.length,
       upcoming_count: upcomingMatches.length,
+      vila_teams_analyzed: Object.keys(teamHistoryMap).length,
       generated_at: new Date().toISOString(),
       matches,
     });
@@ -213,4 +359,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message });
   }
 }
-
