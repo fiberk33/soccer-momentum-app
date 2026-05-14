@@ -328,9 +328,16 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
               <div style={{ fontSize: 11, fontWeight: 700, color: "#1565c0", fontFamily: "monospace", lineHeight: 1.2 }}>{m.kickoff_display}</div>
               <div style={{ fontSize: 8, color: "#1565c0", fontWeight: 600, marginTop: 2 }}>{m.time_until}</div>
             </>
+          ) : m.status === "HT" ? (
+            <>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#7b1fa2", fontFamily: "monospace", lineHeight: 1.2 }}>HT</div>
+              <div style={{ fontSize: 8, color: "#7b1fa2", fontWeight: 600, marginTop: 2 }}>45′</div>
+            </>
           ) : (
             <>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#e53935", fontFamily: "monospace", lineHeight: 1.2 }}>{m.minute}′</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#e53935", fontFamily: "monospace", lineHeight: 1.2 }}>
+                {m.minute}′
+              </div>
               {isVila && <div style={{ fontSize: 8, color: "#f9a825", fontWeight: 700, marginTop: 2 }}>VILA</div>}
             </>
           )}
