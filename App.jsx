@@ -717,65 +717,53 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
         </div>
       </div>
 
-      {/* ── MOTIVATION BARS — full width below match row ── */}
-      {m.status !== "NS" && m.status !== "FT" && (
-        <div style={{ padding: "0 14px 10px 14px", background: expanded ? "#fafafa" : m.status === "FT" ? "#f9f9f9" : "#fff" }}>
-          {[
-            { team: m.home, goals: m.home.goals, oppGoals: m.away.goals },
-            { team: m.away, goals: m.away.goals, oppGoals: m.home.goals },
-          ].map(({ team, goals, oppGoals }, idx) => {
-            const mot = team.motivation;
-            const late = m.minute >= 70;
-            const veryLate = m.minute >= 80;
-            const trailing = goals < oppGoals;
-            const leading = goals > oppGoals;
-            const drawing = goals === oppGoals;
-
-            const rawScore = mot?.score != null ? mot.score :
-              trailing ? (veryLate ? 9.5 : late ? 8 : 7) :
-              leading  ? (veryLate ? 3   : late ? 4 : 5) :
-              (veryLate ? 8.5 : late ? 7 : 5.5);
-            const score = Math.min(10, Math.max(1, rawScore));
-            const pct = Math.round((score / 10) * 100);
-            const mc = score >= 8 ? "#d32f2f" : score >= 6 ? "#e65100" : score >= 5 ? "#1565c0" : "#757575";
-
-            let labelText, labelColor;
-            if (mot?.tag) {
-              labelText = mot.tag.text; labelColor = mot.tag.color;
-            } else if (trailing && veryLate) { labelText = "🚨 MUST WIN";    labelColor = "#c62828"; }
-            else if (trailing && late)       { labelText = "⚡ MUST SCORE";  labelColor = "#e53935"; }
-            else if (trailing)               { labelText = "⚡ Chasing";     labelColor = "#f57c00"; }
-            else if (leading && score <= 4 && veryLate) { labelText = "🛡️ SAFE"; labelColor = "#2e7d32"; }
-            else if (leading && score <= 4)  { labelText = "🛡️ Protecting"; labelColor = "#388e3c"; }
-            else if (drawing && veryLate)    { labelText = "🔥 MUST SCORE"; labelColor = "#6a1b9a"; }
-            else if (drawing && late)        { labelText = "⚡ Pushing";     labelColor = "#f57c00"; }
-            else                             { labelText = mot?.label || "In play"; labelColor = "#aaa"; }
-
-            return (
-              <div key={idx} style={{ marginBottom: idx === 0 ? 6 : 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  {/* Team name */}
-                  <div style={{ fontSize: 10, color: "#888", minWidth: 90, maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {team.name}
-                  </div>
-                  {/* Bar */}
-                  <div style={{ flex: 1, height: 8, background: "#e0e0e0", borderRadius: 4 }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: mc, borderRadius: 4, minWidth: 6, transition: "width .6s" }} />
-                  </div>
-                  {/* Score */}
-                  <div style={{ fontSize: 11, fontWeight: 800, color: mc, fontFamily: "monospace", minWidth: 18, textAlign: "right" }}>{score.toFixed(0)}</div>
-                  {/* Label */}
-                  <div style={{ minWidth: 90 }}>
-                    <span style={{ fontSize: 9, fontWeight: 800, borderRadius: 8, padding: "2px 7px", background: `${labelColor}18`, color: labelColor, border: `1.5px solid ${labelColor}55`, whiteSpace: "nowrap" }}>
-                      {labelText}
-                    </span>
-                  </div>
-                </div>
+      {/* ── MOTIVATION — simple visible row ── */}
+      {m.status !== "NS" && m.status !== "FT" && (() => {
+        const getLabel = (goals, opp, minute, mot) => {
+          const late = minute >= 70, veryLate = minute >= 80;
+          const trailing = goals < opp, leading = goals > opp, drawing = goals === opp;
+          if (mot?.tag) return { text: mot.tag.text, color: mot.tag.color };
+          if (trailing && veryLate) return { text: "🚨 MUST WIN", color: "#c62828" };
+          if (trailing && late)     return { text: "⚡ MUST SCORE", color: "#e53935" };
+          if (trailing)             return { text: "⚡ Chasing", color: "#f57c00" };
+          if (leading && veryLate)  return { text: "🛡️ SAFE", color: "#2e7d32" };
+          if (leading)              return { text: "🛡️ Protecting", color: "#388e3c" };
+          if (drawing && veryLate)  return { text: "🔥 MUST SCORE", color: "#6a1b9a" };
+          if (drawing && late)      return { text: "⚡ Pushing", color: "#f57c00" };
+          return { text: "In play", color: "#aaa" };
+        };
+        const hLabel = getLabel(m.home.goals, m.away.goals, m.minute, m.home.motivation);
+        const aLabel = getLabel(m.away.goals, m.home.goals, m.minute, m.away.motivation);
+        const hScore = Math.min(10, Math.max(1, m.home.motivation?.score ??
+          (m.home.goals < m.away.goals ? (m.minute >= 80 ? 9.5 : 7) : m.home.goals > m.away.goals ? (m.minute >= 80 ? 3 : 5) : (m.minute >= 80 ? 8.5 : 5.5))));
+        const aScore = Math.min(10, Math.max(1, m.away.motivation?.score ??
+          (m.away.goals < m.home.goals ? (m.minute >= 80 ? 9.5 : 7) : m.away.goals > m.home.goals ? (m.minute >= 80 ? 3 : 5) : (m.minute >= 80 ? 8.5 : 5.5))));
+        const hColor = hScore >= 8 ? "#d32f2f" : hScore >= 6 ? "#e65100" : hScore >= 5 ? "#1565c0" : "#757575";
+        const aColor = aScore >= 8 ? "#d32f2f" : aScore >= 6 ? "#e65100" : aScore >= 5 ? "#1565c0" : "#757575";
+        return (
+          <div style={{ margin: "2px 14px 10px", padding: "8px 10px", background: "#f8f8f8", borderRadius: 8, border: "1px solid #eee" }}>
+            <div style={{ fontSize: 9, color: "#bbb", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 6 }}>🧠 MOTIVATION</div>
+            {/* Home */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+              <span style={{ fontSize: 10, color: "#666", width: 85, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.home.name}</span>
+              <div style={{ flex: 1, height: 8, background: "#ddd", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ width: `${Math.round((hScore/10)*100)}%`, height: "100%", background: hColor, borderRadius: 4 }} />
               </div>
-            );
-          })}
-        </div>
-      )}
+              <span style={{ fontSize: 10, fontWeight: 800, color: hColor, width: 16, textAlign: "right", fontFamily: "monospace" }}>{Math.round(hScore)}</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: hLabel.color, background: hLabel.color + "18", border: "1px solid " + hLabel.color + "55", borderRadius: 8, padding: "2px 6px", whiteSpace: "nowrap", flexShrink: 0 }}>{hLabel.text}</span>
+            </div>
+            {/* Away */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 10, color: "#666", width: 85, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.away.name}</span>
+              <div style={{ flex: 1, height: 8, background: "#ddd", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ width: `${Math.round((aScore/10)*100)}%`, height: "100%", background: aColor, borderRadius: 4 }} />
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 800, color: aColor, width: 16, textAlign: "right", fontFamily: "monospace" }}>{Math.round(aScore)}</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: aLabel.color, background: aLabel.color + "18", border: "1px solid " + aLabel.color + "55", borderRadius: 8, padding: "2px 6px", whiteSpace: "nowrap", flexShrink: 0 }}>{aLabel.text}</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {expanded && <MatchDetail m={m} />}
     </div>
