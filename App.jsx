@@ -546,7 +546,7 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
   return (
     <div style={{ borderBottom: "1.5px solid #f0f0f0" }}>
       <div onClick={onToggle} style={{
-        display: "flex", alignItems: "flex-start", padding: "13px 12px 13px 16px",
+        display: "flex", alignItems: "flex-start", padding: "10px 10px 10px 12px",
         cursor: "pointer", background: expanded ? "#fafafa" : m.status === "FT" ? "#f9f9f9" : "#fff",
         transition: "background .15s", gap: 8, opacity: m.status === "FT" ? 0.75 : 1,
       }}>
@@ -595,10 +595,7 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
           {/* ── HOME TEAM ── */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flex: 1 }}>
-              {m.home.logo
-                ? <img src={m.home.logo} width="14" height="14" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
-                : <div style={{ width: 14, height: 14, background: "#e8e8e8", borderRadius: 2, flexShrink: 0 }} />
-              }
+              {m.home.logo && <img src={m.home.logo} width="16" height="16" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />}
               <span style={{ fontSize: 16, color: homeWin ? "#111" : "#555", fontWeight: homeWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {m.home.name}
               </span>
@@ -616,10 +613,7 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
           {/* Away row */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flex: 1 }}>
-              {m.away.logo
-                ? <img src={m.away.logo} width="15" height="15" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
-                : <div style={{ width: 15, height: 15, background: "#e8e8e8", borderRadius: 2, flexShrink: 0 }} />
-              }
+              {m.away.logo && <img src={m.away.logo} width="16" height="16" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />}
               <span style={{ fontSize: 16, color: awayWin ? "#111" : "#555", fontWeight: awayWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {m.away.name}
               </span>
@@ -638,9 +632,9 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
         <div style={{ width: 1, alignSelf: "stretch", background: "#f0f0f0", flexShrink: 0 }} />
 
         {/* Signals column — col 2 */}
-        <div style={{ width: 110, flexShrink: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ width: 95, flexShrink: 0, display: "flex", flexDirection: "column", gap: 5 }}>
           {topSignals.length === 0 ? (
-            <div style={{ fontSize: 13, color: "#666", fontStyle: "italic", marginTop: 4 }}>No signals</div>
+            <div style={{ fontSize: 12, color: "#888", fontStyle: "italic", marginTop: 2 }}>No signals</div>
           ) : topSignals.map((sig, i) => (
             <Tooltip key={i} text={
               sig.text === "Vila Window" ? "End-of-half pressure spike. Goal probability historically +35% in minutes 35–45 & 80–93." :
@@ -720,7 +714,7 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
         {/* Heat + star + FD — col 4 */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
           <div style={{
-            width: 42, height: 42, borderRadius: "50%",
+            width: 40, height: 40, borderRadius: "50%",
             border: `2.5px solid ${color}`,
             background: `${color}12`,
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -1009,65 +1003,42 @@ export default function App() {
       {/* ── HEADER ── */}
       <div style={{ position: "sticky", top: 0, zIndex: 100, background: "#fff", boxShadow: "0 1px 4px #0000000f" }}>
 
-        {/* Title bar */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1.5px solid #f0f0f0" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 26 }}>⚽</span>
-            <span style={{ fontSize: 21, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
+        {/* Title bar — mobile optimized */}
+        <div style={{ padding: "8px 12px", borderBottom: "1px solid #f0f0f0" }}>
+          {/* Row 1: Logo + Live toggle + Refresh */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+            <span style={{ fontSize: 22 }}>⚽</span>
+            <span style={{ fontSize: 18, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
               Momentum<span style={{ color: "#e53935" }}>Track</span>
             </span>
             {extremeCount > 0 && (
-              <span style={{ fontSize: 14, background: "#e53935", color: "#fff", borderRadius: 10, padding: "5px 10px", fontWeight: 700, animation: "blink 1.5s infinite" }}>
+              <span style={{ fontSize: 12, background: "#e53935", color: "#fff", borderRadius: 10, padding: "3px 8px", fontWeight: 700, animation: "blink 1.5s infinite" }}>
                 {extremeCount} 🔥
               </span>
             )}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ flex: 1 }} />
+            {/* ALL / LIVE toggle */}
             <div style={{ display: "flex", background: "#f0f0f0", borderRadius: 20, padding: 2, gap: 1 }}>
-              <button onClick={() => setFilterLive(false)} style={{
-                padding: "6px 12px", borderRadius: 18, border: "none", cursor: "pointer",
-                fontSize: 15, fontWeight: 700,
-                background: !filterLive ? "#1565c0" : "transparent",
-                color: !filterLive ? "#fff" : "#aaa",
-                transition: "all .2s",
-              }}>ALL</button>
-              <button onClick={() => setFilterLive(true)} style={{
-                padding: "6px 12px", borderRadius: 18, border: "none", cursor: "pointer",
-                fontSize: 15, fontWeight: 700,
-                background: filterLive ? "#e53935" : "transparent",
-                color: filterLive ? "#fff" : "#aaa",
-                transition: "all .2s",
-              }}>● LIVE</button>
+              <button onClick={() => setFilterLive(false)} style={{ padding: "5px 10px", borderRadius: 18, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: !filterLive ? "#1565c0" : "transparent", color: !filterLive ? "#fff" : "#aaa" }}>ALL</button>
+              <button onClick={() => setFilterLive(true)} style={{ padding: "5px 10px", borderRadius: 18, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: filterLive ? "#e53935" : "transparent", color: filterLive ? "#fff" : "#aaa" }}>● LIVE</button>
             </div>
-            <button onClick={() => setShowFavsOnly(f => !f)} style={{
-              background: showFavsOnly ? "#fff8e1" : "#fafafa",
-              border: `1px solid ${showFavsOnly ? "#f9a82566" : "#e0e0e0"}`,
-              borderRadius: 6, padding: "6px 11px", cursor: "pointer",
-              fontSize: 17, color: showFavsOnly ? "#f9a825" : "#aaa",
-            }}>★{favourites.size > 0 && ` ${favourites.size}`}</button>
-            <button onClick={() => setShowFanduelOnly(f => !f)} style={{
-              background: showFanduelOnly ? "#e8f5e9" : "#fafafa",
-              border: `1px solid ${showFanduelOnly ? "#43a04766" : "#e0e0e0"}`,
-              borderRadius: 6, padding: "6px 11px", cursor: "pointer",
-              fontSize: 15, fontWeight: 700,
-              color: showFanduelOnly ? "#2e7d32" : "#aaa",
-              letterSpacing: "0.02em",
-            }}>🟢 FD{fanduelGames.size > 0 ? ` ${fanduelGames.size}` : ""}{showFanduelOnly ? " ✓" : ""}</button>
-            <button onClick={() => setSoundEnabled(s => !s)} style={{ background: soundEnabled ? "#e8f5e9" : "#fafafa", border: `1.5px solid ${soundEnabled ? "#a5d6a7" : "#e0e0e0"}`, borderRadius: 6, padding: "6px 11px", cursor: "pointer", fontSize: 14, fontWeight: 800, color: soundEnabled ? "#2e7d32" : "#aaa" }} title={soundEnabled ? "Sound ON — tap to mute" : "Sound OFF — tap to enable"}>
+            {/* Refresh */}
+            <button onClick={load} style={{ background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 8, padding: "5px 8px", cursor: "pointer", fontSize: 13, fontFamily: "monospace", color: countdown < 10 ? "#f57c00" : "#aaa", display: "flex", alignItems: "center", gap: 3 }}>
+              {loading ? <span style={{ display: "inline-block", width: 10, height: 10, border: "2px solid #e53935", borderTopColor: "transparent", borderRadius: "50%", animation: "spin .7s linear infinite" }} /> : "↻"} {countdown}s
+            </button>
+          </div>
+          {/* Row 2: Action buttons */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button onClick={() => setShowFavsOnly(f => !f)} style={{ flex: 1, background: showFavsOnly ? "#fff8e1" : "#fafafa", border: `1px solid ${showFavsOnly ? "#f9a82566" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 6px", cursor: "pointer", fontSize: 13, fontWeight: 700, color: showFavsOnly ? "#f9a825" : "#777", textAlign: "center" }}>
+              ★ Watchlist{favourites.size > 0 ? ` (${favourites.size})` : ""}
+            </button>
+            <button onClick={() => setShowFanduelOnly(f => !f)} style={{ flex: 1, background: showFanduelOnly ? "#e8f5e9" : "#fafafa", border: `1px solid ${showFanduelOnly ? "#43a04766" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 6px", cursor: "pointer", fontSize: 13, fontWeight: 700, color: showFanduelOnly ? "#2e7d32" : "#777", textAlign: "center" }}>
+              🟢 FanDuel{fanduelGames.size > 0 ? ` (${fanduelGames.size})` : ""}
+            </button>
+            <button onClick={() => setSoundEnabled(s => !s)} style={{ background: soundEnabled ? "#e8f5e9" : "#fafafa", border: `1px solid ${soundEnabled ? "#a5d6a7" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 16 }}>
               {soundEnabled ? "🔊" : "🔇"}
             </button>
-            <button onClick={() => setShowAlertPanel(true)} style={{ background: "#fafafa", border: "1.5px solid #e0e0e0", borderRadius: 6, padding: "6px 11px", cursor: "pointer", fontSize: 17, color: "#777" }}>🔔</button>
-            <button onClick={load} style={{
-              background: "#fafafa", border: "1.5px solid #e0e0e0", borderRadius: 6,
-              padding: "6px 11px", cursor: "pointer", fontSize: 16,
-              color: countdown < 10 ? "#f57c00" : "#aaa",
-              fontFamily: "monospace", display: "flex", alignItems: "center", gap: 4,
-            }}>
-              {loading
-                ? <span style={{ display: "inline-block", width: 10, height: 10, border: "2px solid #e53935", borderTopColor: "transparent", borderRadius: "50%", animation: "spin .7s linear infinite" }} />
-                : "↻"
-              } {countdown}s
-            </button>
+            <button onClick={() => setShowAlertPanel(true)} style={{ background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 16 }}>🔔</button>
           </div>
         </div>
 
