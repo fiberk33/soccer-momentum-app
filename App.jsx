@@ -61,16 +61,16 @@ function Tooltip({ text, children }) {
           zIndex: 9999,
           background: "#1a1a1a",
           color: "#fff",
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: 500,
           padding: "5px 10px",
           borderRadius: 6,
           whiteSpace: "nowrap",
           boxShadow: "0 2px 8px #0004",
           pointerEvents: "none",
-          border: "1px solid #333",
+          border: "1.5px solid #333",
           maxWidth: 260,
-          lineHeight: 1.4,
+          lineHeight: 1.5,
         }}>{text}</span>
       )}
     </span>
@@ -111,7 +111,7 @@ function MotivationGauge({ team, side }) {
       boxShadow: `0 2px 8px ${color}11`,
     }}>
       {/* Team name */}
-      <div style={{ fontSize: 10, fontWeight: 700, color: "#555", marginBottom: 6, textAlign: "center", lineHeight: 1.2 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: "#555", marginBottom: 6, textAlign: "center", lineHeight: 1.5 }}>
         {team.name}
       </div>
 
@@ -137,25 +137,25 @@ function MotivationGauge({ team, side }) {
 
       {/* Label */}
       <div style={{
-        fontSize: 9, fontWeight: 800, color,
+        fontSize: 11, fontWeight: 800, color,
         letterSpacing: "0.05em", marginTop: 2, textAlign: "center",
       }}>{mot.label?.toUpperCase()}</div>
 
       {/* Standing tag */}
       {mot.tag && (
         <div style={{
-          marginTop: 5, fontSize: 8, fontWeight: 700,
+          marginTop: 5, fontSize: 10, fontWeight: 700,
           background: `${mot.tag.color}15`,
           color: mot.tag.color,
           border: `1px solid ${mot.tag.color}33`,
-          borderRadius: 20, padding: "2px 8px",
+          borderRadius: 20, padding: "5px 10px",
           textAlign: "center",
         }}>{mot.tag.text}</div>
       )}
 
       {/* Rank */}
       {mot.rank && (
-        <div style={{ fontSize: 8, color: "#bbb", marginTop: 4, fontFamily: "monospace" }}>
+        <div style={{ fontSize: 10, color: "#bbb", marginTop: 4, fontFamily: "monospace" }}>
           #{mot.rank} · {mot.points}pts
         </div>
       )}
@@ -170,7 +170,7 @@ function MatchDetail({ m }) {
   const hasMot = m.home.motivation || m.away.motivation;
 
   return (
-    <div style={{ background: "#f9f9f9", padding: "12px 14px 14px", borderTop: "1px solid #eee" }}>
+    <div style={{ background: "#f9f9f9", padding: "12px 14px 14px", borderTop: "1.5px solid #eee" }}>
 
       {/* ── MOTIVATION INDEX PANEL ── */}
       {hasMot && (
@@ -178,7 +178,7 @@ function MatchDetail({ m }) {
           {/* Header */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
             <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, transparent, #e0e0e0)" }} />
-            <div style={{ fontSize: 9, fontWeight: 800, color: "#bbb", letterSpacing: "0.12em", whiteSpace: "nowrap" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#bbb", letterSpacing: "0.12em", whiteSpace: "nowrap" }}>
               🧠 MOTIVATION INDEX
             </div>
             <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, #e0e0e0, transparent)" }} />
@@ -190,7 +190,7 @@ function MatchDetail({ m }) {
             {/* VS divider */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, flexShrink: 0 }}>
               <div style={{ width: 1, flex: 1, background: "#eee" }} />
-              <div style={{ fontSize: 9, fontWeight: 800, color: "#ccc" }}>VS</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#ccc" }}>VS</div>
               <div style={{ width: 1, flex: 1, background: "#eee" }} />
             </div>
             <MotivationGauge team={m.away} side="away" />
@@ -226,7 +226,7 @@ function MatchDetail({ m }) {
             if (!insight) return null;
             return (
               <div style={{ background: insight.bg, border: `1px solid ${insight.border}`, borderRadius: 8, padding: "8px 12px" }}>
-                <div style={{ fontSize: 11, color: insight.color, lineHeight: 1.5 }}>{insight.text}</div>
+                <div style={{ fontSize: 13, color: insight.color, lineHeight: 1.5 }}>{insight.text}</div>
               </div>
             );
           })()}
@@ -235,11 +235,11 @@ function MatchDetail({ m }) {
 
       {/* ── HEAT SCORE BAR ── */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <div style={{ fontSize: 9, fontWeight: 800, color: "#bbb", letterSpacing: "0.1em", minWidth: 68 }}>HEAT SCORE</div>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "#bbb", letterSpacing: "0.1em", minWidth: 68 }}>HEAT SCORE</div>
         <div style={{ flex: 1, height: 6, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}>
           <div style={{ width: `${m.heat_score}%`, height: "100%", background: `linear-gradient(90deg, ${heatColor(m.heat_score)}99, ${heatColor(m.heat_score)})`, borderRadius: 3, transition: "width .6s ease" }} />
         </div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: heatColor(m.heat_score), fontFamily: "monospace", minWidth: 24, textAlign: "right" }}>{m.heat_score}</div>
+        <div style={{ fontSize: 16, fontWeight: 800, color: heatColor(m.heat_score), fontFamily: "monospace", minWidth: 24, textAlign: "right" }}>{m.heat_score}</div>
       </div>
 
       {/* ── HEAT BREAKDOWN CARDS ── */}
@@ -251,12 +251,12 @@ function MatchDetail({ m }) {
             { label: "Vila", val: m.breakdown.vila_effect, max: 35, color: "#f9a825", icon: "⏱️" },
           ].map(({ label, val, max, color, icon }) => (
             <div key={label} style={{ flex: 1, background: "#fff", borderRadius: 8, padding: "8px 6px", border: `1px solid ${val > 0 ? color + "33" : "#eee"}`, textAlign: "center", boxShadow: val > 0 ? `0 2px 6px ${color}15` : "none" }}>
-              <div style={{ fontSize: 12, marginBottom: 3 }}>{icon}</div>
-              <div style={{ fontSize: 8, color: "#bbb", marginBottom: 4, letterSpacing: "0.05em" }}>{label.toUpperCase()}</div>
+              <div style={{ fontSize: 14, marginBottom: 3 }}>{icon}</div>
+              <div style={{ fontSize: 10, color: "#bbb", marginBottom: 4, letterSpacing: "0.05em" }}>{label.toUpperCase()}</div>
               <div style={{ height: 3, background: "#f0f0f0", borderRadius: 2, marginBottom: 4 }}>
                 <div style={{ width: `${(val / max) * 100}%`, height: "100%", background: color, borderRadius: 2, transition: "width .6s" }} />
               </div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: val > 0 ? color : "#ccc" }}>{val}<span style={{ fontSize: 9, fontWeight: 400, color: "#ddd" }}>/{max}</span></div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: val > 0 ? color : "#ccc" }}>{val}<span style={{ fontSize: 11, fontWeight: 400, color: "#ddd" }}>/{max}</span></div>
             </div>
           ))}
         </div>
@@ -264,11 +264,11 @@ function MatchDetail({ m }) {
 
       {/* ── STATS GRID ── */}
       {hasStats && (
-        <div style={{ background: "#fff", borderRadius: 8, border: "1px solid #eee", overflow: "hidden", marginBottom: 10 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", padding: "6px 12px", background: "#f5f5f5", borderBottom: "1px solid #eee" }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textAlign: "right" }}>{m.home.name}</div>
-            <div style={{ fontSize: 10, color: "#ccc", textAlign: "center", padding: "0 10px" }}>STATS</div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#888" }}>{m.away.name}</div>
+        <div style={{ background: "#fff", borderRadius: 8, border: "1.5px solid #eee", overflow: "hidden", marginBottom: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", padding: "6px 12px", background: "#f5f5f5", borderBottom: "1.5px solid #eee" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#888", textAlign: "right" }}>{m.home.name}</div>
+            <div style={{ fontSize: 12, color: "#ccc", textAlign: "center", padding: "0 10px" }}>STATS</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#888" }}>{m.away.name}</div>
           </div>
           {[
             { label: "Possession", hv: `${m.home.possession}%`, av: `${m.away.possession}%`, hNum: m.home.possession, aNum: m.away.possession },
@@ -281,10 +281,10 @@ function MatchDetail({ m }) {
             const homeWins = hNum > aNum;
             const awayWins = aNum > hNum;
             return (
-              <div key={label} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", padding: "7px 12px", background: i % 2 === 0 ? "#fff" : "#fafafa", borderBottom: i < 5 ? "1px solid #f0f0f0" : "none", alignItems: "center" }}>
-                <div style={{ fontSize: 12, color: homeWins ? "#111" : "#888", textAlign: "right", fontWeight: homeWins ? 700 : 400 }}>{hv}</div>
-                <div style={{ fontSize: 10, color: "#ccc", textAlign: "center", padding: "0 10px", whiteSpace: "nowrap" }}>{label}</div>
-                <div style={{ fontSize: 12, color: awayWins ? "#111" : "#888", textAlign: "left", fontWeight: awayWins ? 700 : 400 }}>{av}</div>
+              <div key={label} style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", padding: "9px 14px", background: i % 2 === 0 ? "#fff" : "#fafafa", borderBottom: i < 5 ? "1.5px solid #f0f0f0" : "none", alignItems: "center" }}>
+                <div style={{ fontSize: 14, color: homeWins ? "#111" : "#888", textAlign: "right", fontWeight: homeWins ? 700 : 400 }}>{hv}</div>
+                <div style={{ fontSize: 12, color: "#ccc", textAlign: "center", padding: "0 10px", whiteSpace: "nowrap" }}>{label}</div>
+                <div style={{ fontSize: 14, color: awayWins ? "#111" : "#888", textAlign: "left", fontWeight: awayWins ? 700 : 400 }}>{av}</div>
               </div>
             );
           })}
@@ -293,10 +293,10 @@ function MatchDetail({ m }) {
 
       {/* ── TRIGGERS ── */}
       {triggers.length > 0 && (
-        <div style={{ background: "#fff", borderRadius: 8, border: "1px solid #eee", padding: "8px 12px" }}>
-          <div style={{ fontSize: 9, fontWeight: 800, color: "#ccc", letterSpacing: "0.1em", marginBottom: 6 }}>SIGNALS</div>
+        <div style={{ background: "#fff", borderRadius: 8, border: "1.5px solid #eee", padding: "8px 12px" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "#ccc", letterSpacing: "0.1em", marginBottom: 6 }}>SIGNALS</div>
           {triggers.map((t, i) => (
-            <div key={i} style={{ fontSize: 11, color: "#777", marginBottom: i < triggers.length - 1 ? 4 : 0, paddingLeft: 4, borderLeft: "2px solid #f0f0f0" }}>{t}</div>
+            <div key={i} style={{ fontSize: 13, color: "#777", marginBottom: i < triggers.length - 1 ? 4 : 0, paddingLeft: 4, borderLeft: "2px solid #f0f0f0" }}>{t}</div>
           ))}
         </div>
       )}
@@ -544,9 +544,9 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
   const topSignals = signals.slice(0, 5);
 
   return (
-    <div style={{ borderBottom: "1px solid #f0f0f0" }}>
+    <div style={{ borderBottom: "1.5px solid #f0f0f0" }}>
       <div onClick={onToggle} style={{
-        display: "flex", alignItems: "flex-start", padding: "10px 10px 10px 14px",
+        display: "flex", alignItems: "flex-start", padding: "13px 12px 13px 16px",
         cursor: "pointer", background: expanded ? "#fafafa" : m.status === "FT" ? "#f9f9f9" : "#fff",
         transition: "background .15s", gap: 8, opacity: m.status === "FT" ? 0.75 : 1,
       }}>
@@ -562,25 +562,25 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
           }>
           {m.status === "NS" ? (
             <>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#1565c0", fontFamily: "monospace", lineHeight: 1.2 }}>{m.kickoff_display}</div>
-              <div style={{ fontSize: 8, color: "#1565c0", fontWeight: 600, marginTop: 2 }}>{m.time_until}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#1565c0", fontFamily: "monospace", lineHeight: 1.5 }}>{m.kickoff_display}</div>
+              <div style={{ fontSize: 10, color: "#1565c0", fontWeight: 600, marginTop: 2 }}>{m.time_until}</div>
             </>
           ) : m.status === "HT" ? (
             <>
-              <div style={{ fontSize: 12, fontWeight: 800, color: "#7b1fa2", fontFamily: "monospace", lineHeight: 1.2 }}>HT</div>
-              <div style={{ fontSize: 8, color: "#7b1fa2", fontWeight: 600, marginTop: 2 }}>45′</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#7b1fa2", fontFamily: "monospace", lineHeight: 1.5 }}>HT</div>
+              <div style={{ fontSize: 10, color: "#7b1fa2", fontWeight: 600, marginTop: 2 }}>45′</div>
             </>
           ) : m.status === "FT" ? (
             <>
-              <div style={{ fontSize: 12, fontWeight: 800, color: "#388e3c", fontFamily: "monospace", lineHeight: 1.2 }}>FT</div>
-              <div style={{ fontSize: 8, color: "#388e3c", fontWeight: 600, marginTop: 2 }}>90′</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#388e3c", fontFamily: "monospace", lineHeight: 1.5 }}>FT</div>
+              <div style={{ fontSize: 10, color: "#388e3c", fontWeight: 600, marginTop: 2 }}>90′</div>
             </>
           ) : (
             <>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#e53935", fontFamily: "monospace", lineHeight: 1.2 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#e53935", fontFamily: "monospace", lineHeight: 1.5 }}>
                 {m.minute}′
               </div>
-              {isVila && <div style={{ fontSize: 8, color: "#f9a825", fontWeight: 700, marginTop: 2 }}>VILA</div>}
+              {isVila && <div style={{ fontSize: 10, color: "#f9a825", fontWeight: 700, marginTop: 2 }}>VILA</div>}
             </>
           )}
           </Tooltip>
@@ -599,17 +599,17 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                 ? <img src={m.home.logo} width="14" height="14" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
                 : <div style={{ width: 14, height: 14, background: "#e8e8e8", borderRadius: 2, flexShrink: 0 }} />
               }
-              <span style={{ fontSize: 12, color: homeWin ? "#111" : "#555", fontWeight: homeWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 14, color: homeWin ? "#111" : "#555", fontWeight: homeWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {m.home.name}
               </span>
-              {m.home.red_cards > 0 && <span style={{ fontSize: 7, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
+              {m.home.red_cards > 0 && <span style={{ fontSize: 9, background: "#e53935", color: "#fff", borderRadius: 2, padding: "2px 5px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
               {isVila && m.home.vila?.isVilaTeam && (
-                <span style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: m.home.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.home.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.home.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
+                <span style={{ fontSize: 9, borderRadius: 3, padding: "2px 6px", flexShrink: 0, fontWeight: 700, background: m.home.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.home.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.home.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
                   ⏱{m.home.vila.lateGoalRate}%
                 </span>
               )}
             </div>
-            <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.home.goals}</span>
+            <span style={{ fontSize: 17, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.home.goals}</span>
           </div>
 
 
@@ -620,17 +620,17 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                 ? <img src={m.away.logo} width="15" height="15" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />
                 : <div style={{ width: 15, height: 15, background: "#e8e8e8", borderRadius: 2, flexShrink: 0 }} />
               }
-              <span style={{ fontSize: 12, color: awayWin ? "#111" : "#555", fontWeight: awayWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 14, color: awayWin ? "#111" : "#555", fontWeight: awayWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {m.away.name}
               </span>
-              {m.away.red_cards > 0 && <span style={{ fontSize: 7, background: "#e53935", color: "#fff", borderRadius: 2, padding: "1px 3px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
+              {m.away.red_cards > 0 && <span style={{ fontSize: 9, background: "#e53935", color: "#fff", borderRadius: 2, padding: "2px 5px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
               {isVila && m.away.vila?.isVilaTeam && (
-                <span style={{ fontSize: 7, borderRadius: 3, padding: "1px 4px", flexShrink: 0, fontWeight: 700, background: m.away.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.away.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.away.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
+                <span style={{ fontSize: 9, borderRadius: 3, padding: "2px 6px", flexShrink: 0, fontWeight: 700, background: m.away.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.away.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.away.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
                   ⏱{m.away.vila.lateGoalRate}%
                 </span>
               )}
             </div>
-            <span style={{ fontSize: 15, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.away.goals}</span>
+            <span style={{ fontSize: 17, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.away.goals}</span>
           </div>
         </div>
 
@@ -640,7 +640,7 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
         {/* Signals column — col 2 */}
         <div style={{ width: 95, flexShrink: 0, display: "flex", flexDirection: "column", gap: 3 }}>
           {topSignals.length === 0 ? (
-            <div style={{ fontSize: 9, color: "#ccc", fontStyle: "italic", marginTop: 4 }}>No signals</div>
+            <div style={{ fontSize: 11, color: "#ccc", fontStyle: "italic", marginTop: 4 }}>No signals</div>
           ) : topSignals.map((sig, i) => (
             <Tooltip key={i} text={
               sig.text === "Vila Window" ? "End-of-half pressure spike. Goal probability historically +35% in minutes 35–45 & 80–93." :
@@ -652,9 +652,9 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
               sig.text === "High Attacks" ? "Dangerous attack rate above 1.5/min — sustained pressure likely to produce a chance." :
               `Bet signal: ${sig.bet}`
             }>
-              <div style={{ display: "flex", flexDirection: "column", background: `${sig.color}0d`, border: `1px solid ${sig.color}33`, borderRadius: 4, padding: "2px 5px" }}>
-                <div style={{ fontSize: 9, color: sig.color, fontWeight: 700 }}>{sig.icon} {sig.text}</div>
-                <div style={{ fontSize: 8, color: "#888", fontWeight: 600 }}>→ {sig.bet}</div>
+              <div style={{ display: "flex", flexDirection: "column", background: `${sig.color}0d`, border: `1px solid ${sig.color}33`, borderRadius: 4, padding: "4px 7px" }}>
+                <div style={{ fontSize: 11, color: sig.color, fontWeight: 700 }}>{sig.icon} {sig.text}</div>
+                <div style={{ fontSize: 10, color: "#888", fontWeight: 600 }}>→ {sig.bet}</div>
               </div>
             </Tooltip>
           ))}
@@ -668,17 +668,17 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
           const gp = calcGoalProb(m);
           const bars = [1,2,3,4,5,6,7,8,9,10];
           return (
-            <div style={{ width: 68, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, paddingTop: 2 }}>
+            <div style={{ width: 80, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, paddingTop: 2 }}>
               {/* Score display */}
               <Tooltip text={
                 gp.score === 0 ? "Not started — no prediction yet" :
                 `Goal Probability: ${gp.probPct}% chance of a goal in the next ${gp.timeLeft}′. Based on Poisson model using possession, shots, attacks, red cards & motivation multiplier. Bet: ${gp.bet}`
               }>
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: gp.color, fontFamily: "monospace", lineHeight: 1, textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: gp.color, fontFamily: "monospace", lineHeight: 1.3, textAlign: "center" }}>
                     {gp.score > 0 ? gp.score.toFixed(1) : "—"}
                   </div>
-                  <div style={{ fontSize: 7, fontWeight: 800, color: gp.color, letterSpacing: "0.04em", textAlign: "center" }}>{gp.label}</div>
+                  <div style={{ fontSize: 9, fontWeight: 800, color: gp.color, letterSpacing: "0.04em", textAlign: "center" }}>{gp.label}</div>
                 </div>
               </Tooltip>
               {/* Bar chart */}
@@ -694,19 +694,19 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
               </div>
               {/* Probability % */}
               {gp.probPct > 0 && (
-                <div style={{ fontSize: 8, color: gp.color, fontWeight: 700, fontFamily: "monospace" }}>
+                <div style={{ fontSize: 10, color: gp.color, fontWeight: 700, fontFamily: "monospace" }}>
                   {gp.probPct}%
                 </div>
               )}
               {/* Best bet */}
               {gp.bet && gp.rounded >= 5 && (
-                <div style={{ fontSize: 7, color: "#888", textAlign: "center", lineHeight: 1.3, maxWidth: 66 }}>
+                <div style={{ fontSize: 9, color: "#888", textAlign: "center", lineHeight: 1.5, maxWidth: 66 }}>
                   {gp.bet}
                 </div>
               )}
               {/* Time label */}
               {gp.timeLeft > 0 && (
-                <div style={{ fontSize: 7, color: "#bbb", fontFamily: "monospace" }}>
+                <div style={{ fontSize: 9, color: "#bbb", fontFamily: "monospace" }}>
                   {gp.timeLeft}′ to {gp.halfLabel}
                 </div>
               )}
@@ -720,28 +720,28 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
         {/* Heat + star + FD — col 4 */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
           <div style={{
-            width: 34, height: 34, borderRadius: "50%",
+            width: 42, height: 42, borderRadius: "50%",
             border: `2.5px solid ${color}`,
             background: `${color}12`,
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color, fontFamily: "monospace" }}>{s}</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color, fontFamily: "monospace" }}>{s}</span>
           </div>
           <Tooltip text={isFav ? "Remove from watchlist" : "Add to watchlist — groups this game at the top"}>
             <button onClick={e => { e.stopPropagation(); onFavToggle(m.fixture_id); }} style={{
               background: "none", border: "none", cursor: "pointer",
-              fontSize: 14, color: isFav ? "#f9a825" : "#ccc",
-              padding: 0, lineHeight: 1,
+              fontSize: 16, color: isFav ? "#f9a825" : "#ccc",
+              padding: 0, lineHeight: 1.3,
             }}>★</button>
           </Tooltip>
           <Tooltip text={isFanduel ? "Tagged as available on FanDuel — tap to untag" : "Tap to mark this game as live on FanDuel. It will move to your FanDuel Live group."}>
             <button onClick={e => { e.stopPropagation(); onFanduelToggle && onFanduelToggle(m.fixture_id); }} style={{
               background: isFanduel ? "#e8f5e9" : "none",
-              border: isFanduel ? "1px solid #a5d6a7" : "1px solid #e0e0e0",
+              border: isFanduel ? "1.5px solid #a5d6a7" : "1.5px solid #e0e0e0",
               borderRadius: 4, cursor: "pointer",
-              fontSize: 8, fontWeight: 700,
+              fontSize: 10, fontWeight: 700,
               color: isFanduel ? "#2e7d32" : "#ccc",
-              padding: "2px 4px", lineHeight: 1.2,
+              padding: "2px 4px", lineHeight: 1.5,
             }}>FD</button>
           </Tooltip>
         </div>
@@ -771,24 +771,24 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
         const hColor = hScore >= 8 ? "#d32f2f" : hScore >= 6 ? "#e65100" : hScore >= 5 ? "#1565c0" : "#757575";
         const aColor = aScore >= 8 ? "#d32f2f" : aScore >= 6 ? "#e65100" : aScore >= 5 ? "#1565c0" : "#757575";
         return (
-          <div style={{ margin: "2px 14px 10px", padding: "8px 10px", background: "#f8f8f8", borderRadius: 8, border: "1px solid #eee" }}>
-            <div style={{ fontSize: 9, color: "#bbb", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 6 }}>🧠 MOTIVATION</div>
+          <div style={{ margin: "2px 14px 10px", padding: "8px 10px", background: "#f8f8f8", borderRadius: 8, border: "1.5px solid #eee" }}>
+            <div style={{ fontSize: 11, color: "#bbb", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 6 }}>🧠 MOTIVATION</div>
             {/* Home */}
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
-              <span style={{ fontSize: 10, color: "#666", width: 85, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.home.name}</span>
-              <div style={{ flex: 1, height: 8, background: "#ddd", borderRadius: 4, overflow: "hidden" }}>
+              <span style={{ fontSize: 12, color: "#666", width: 85, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.home.name}</span>
+              <div style={{ flex: 1, height: 10, background: "#ddd", borderRadius: 4, overflow: "hidden" }}>
                 <div style={{ width: `${Math.round((hScore/10)*100)}%`, height: "100%", background: hColor, borderRadius: 4 }} />
               </div>
-              <span style={{ fontSize: 10, fontWeight: 800, color: hColor, width: 16, textAlign: "right", fontFamily: "monospace" }}>{Math.round(hScore)}</span>
-              <span style={{ fontSize: 9, fontWeight: 700, color: hLabel.color, background: hLabel.color + "18", border: "1px solid " + hLabel.color + "55", borderRadius: 8, padding: "2px 6px", whiteSpace: "nowrap", flexShrink: 0 }}>{hLabel.text}</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: hColor, width: 16, textAlign: "right", fontFamily: "monospace" }}>{Math.round(hScore)}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: hLabel.color, background: hLabel.color + "18", border: "1.5px solid " + hLabel.color + "55", borderRadius: 8, padding: "4px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>{hLabel.text}</span>
             </div>
             {/* Away */}
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 10, color: "#666", width: 85, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.away.name}</span>
-              <div style={{ flex: 1, height: 8, background: "#ddd", borderRadius: 4, overflow: "hidden" }}>
+              <span style={{ fontSize: 12, color: "#666", width: 85, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.away.name}</span>
+              <div style={{ flex: 1, height: 10, background: "#ddd", borderRadius: 4, overflow: "hidden" }}>
                 <div style={{ width: `${Math.round((aScore/10)*100)}%`, height: "100%", background: aColor, borderRadius: 4 }} />
               </div>
-              <span style={{ fontSize: 10, fontWeight: 800, color: aColor, width: 16, textAlign: "right", fontFamily: "monospace" }}>{Math.round(aScore)}</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: aColor, width: 16, textAlign: "right", fontFamily: "monospace" }}>{Math.round(aScore)}</span>
               <Tooltip text={
                 aLabel.text.includes("MUST WIN") ? "Trailing late — maximum attacking urgency. Research shows goal rate 1.8× above average (Dixon & Robinson 1998)." :
                 aLabel.text.includes("MUST SCORE") ? "Trailing or drawing late — strong attacking push. Goal rate elevated by motivation multiplier." :
@@ -801,7 +801,7 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                 aLabel.text.includes("Nothing") ? "Nothing at stake — research shows 20% lower defensive intensity. More open game." :
                 "Motivation level based on league standing and match state"
               }>
-                <span style={{ fontSize: 9, fontWeight: 700, color: aLabel.color, background: aLabel.color + "18", border: "1px solid " + aLabel.color + "55", borderRadius: 8, padding: "2px 6px", whiteSpace: "nowrap", flexShrink: 0 }}>{aLabel.text}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: aLabel.color, background: aLabel.color + "18", border: "1.5px solid " + aLabel.color + "55", borderRadius: 8, padding: "4px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>{aLabel.text}</span>
               </Tooltip>
             </div>
           </div>
@@ -819,15 +819,15 @@ function LeagueHeader({ label, topHeat }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "7px 14px", background: "#f5f5f5",
-      borderBottom: "1px solid #e8e8e8", borderTop: "1px solid #e8e8e8",
+      padding: "9px 16px", background: "#f5f5f5",
+      borderBottom: "1.5px solid #e8e8e8", borderTop: "1.5px solid #e8e8e8",
     }}>
-      <span style={{ fontSize: 11, fontWeight: 700, color: "#666", letterSpacing: "0.03em" }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 700, color: "#666", letterSpacing: "0.03em" }}>{label}</span>
       {topHeat >= 40 && (
         <span style={{
-          fontSize: 10, fontWeight: 700, color,
+          fontSize: 12, fontWeight: 700, color,
           background: `${color}15`, border: `1px solid ${color}44`,
-          borderRadius: 4, padding: "2px 7px", fontFamily: "monospace",
+          borderRadius: 4, padding: "6px 11px", fontFamily: "monospace",
         }}>
           {topHeat >= 80 ? "🔥" : topHeat >= 60 ? "🟠" : "🟡"} {topHeat}
         </span>
@@ -841,28 +841,28 @@ function AlertPanel({ threshold, onChange, onClose }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#00000066", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, padding: 24, width: "100%", maxWidth: 320, boxShadow: "0 8px 32px #0002" }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "#111", marginBottom: 6 }}>🔔 Alert Threshold</div>
-        <div style={{ fontSize: 12, color: "#aaa", marginBottom: 20 }}>Notify when Heat Score ≥</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: "#111", marginBottom: 6 }}>🔔 Alert Threshold</div>
+        <div style={{ fontSize: 14, color: "#aaa", marginBottom: 20 }}>Notify when Heat Score ≥</div>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-          <span style={{ fontSize: 13, color: "#888" }}>Threshold</span>
-          <span style={{ fontSize: 22, fontWeight: 800, fontFamily: "monospace", color: heatColor(threshold) }}>{threshold}</span>
+          <span style={{ fontSize: 15, color: "#888" }}>Threshold</span>
+          <span style={{ fontSize: 24, fontWeight: 800, fontFamily: "monospace", color: heatColor(threshold) }}>{threshold}</span>
         </div>
         <input type="range" min="40" max="95" step="5" value={threshold} onChange={e => onChange(Number(e.target.value))} style={{ width: "100%", accentColor: "#e53935", cursor: "pointer" }} />
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#ccc", marginTop: 4, marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#ccc", marginTop: 4, marginBottom: 16 }}>
           <span>40</span><span>60</span><span>80</span><span>95</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
           {[60, 70, 80].map(v => (
             <button key={v} onClick={() => onChange(v)} style={{
               padding: "10px 0", borderRadius: 8, cursor: "pointer",
-              border: threshold === v ? "2px solid #e53935" : "1px solid #eee",
+              border: threshold === v ? "2px solid #e53935" : "1.5px solid #eee",
               background: threshold === v ? "#fdecea" : "#fafafa",
               color: threshold === v ? "#e53935" : "#888",
-              fontSize: 14, fontWeight: 700,
+              fontSize: 16, fontWeight: 700,
             }}>{v}</button>
           ))}
         </div>
-        <button onClick={onClose} style={{ width: "100%", padding: "11px 0", borderRadius: 8, background: "#f5f5f5", border: "none", color: "#888", fontSize: 13, cursor: "pointer" }}>Done</button>
+        <button onClick={onClose} style={{ width: "100%", padding: "11px 0", borderRadius: 8, background: "#f5f5f5", border: "none", color: "#888", fontSize: 15, cursor: "pointer" }}>Done</button>
       </div>
     </div>
   );
@@ -968,14 +968,14 @@ export default function App() {
       <div style={{ position: "sticky", top: 0, zIndex: 100, background: "#fff", boxShadow: "0 1px 4px #0000000f" }}>
 
         {/* Title bar */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1px solid #f0f0f0" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderBottom: "1.5px solid #f0f0f0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 22 }}>⚽</span>
-            <span style={{ fontSize: 17, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
+            <span style={{ fontSize: 24 }}>⚽</span>
+            <span style={{ fontSize: 19, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
               Momentum<span style={{ color: "#e53935" }}>Track</span>
             </span>
             {extremeCount > 0 && (
-              <span style={{ fontSize: 10, background: "#e53935", color: "#fff", borderRadius: 10, padding: "2px 8px", fontWeight: 700, animation: "blink 1.5s infinite" }}>
+              <span style={{ fontSize: 12, background: "#e53935", color: "#fff", borderRadius: 10, padding: "5px 10px", fontWeight: 700, animation: "blink 1.5s infinite" }}>
                 {extremeCount} 🔥
               </span>
             )}
@@ -983,15 +983,15 @@ export default function App() {
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ display: "flex", background: "#f0f0f0", borderRadius: 20, padding: 2, gap: 1 }}>
               <button onClick={() => setFilterLive(false)} style={{
-                padding: "4px 10px", borderRadius: 18, border: "none", cursor: "pointer",
-                fontSize: 11, fontWeight: 700,
+                padding: "6px 12px", borderRadius: 18, border: "none", cursor: "pointer",
+                fontSize: 13, fontWeight: 700,
                 background: !filterLive ? "#1565c0" : "transparent",
                 color: !filterLive ? "#fff" : "#aaa",
                 transition: "all .2s",
               }}>ALL</button>
               <button onClick={() => setFilterLive(true)} style={{
-                padding: "4px 10px", borderRadius: 18, border: "none", cursor: "pointer",
-                fontSize: 11, fontWeight: 700,
+                padding: "6px 12px", borderRadius: 18, border: "none", cursor: "pointer",
+                fontSize: 13, fontWeight: 700,
                 background: filterLive ? "#e53935" : "transparent",
                 color: filterLive ? "#fff" : "#aaa",
                 transition: "all .2s",
@@ -1000,21 +1000,21 @@ export default function App() {
             <button onClick={() => setShowFavsOnly(f => !f)} style={{
               background: showFavsOnly ? "#fff8e1" : "#fafafa",
               border: `1px solid ${showFavsOnly ? "#f9a82566" : "#e0e0e0"}`,
-              borderRadius: 6, padding: "4px 9px", cursor: "pointer",
-              fontSize: 13, color: showFavsOnly ? "#f9a825" : "#aaa",
+              borderRadius: 6, padding: "6px 11px", cursor: "pointer",
+              fontSize: 15, color: showFavsOnly ? "#f9a825" : "#aaa",
             }}>★{favourites.size > 0 && ` ${favourites.size}`}</button>
             <button onClick={() => setShowFanduelOnly(f => !f)} style={{
               background: showFanduelOnly ? "#e8f5e9" : "#fafafa",
               border: `1px solid ${showFanduelOnly ? "#43a04766" : "#e0e0e0"}`,
-              borderRadius: 6, padding: "4px 9px", cursor: "pointer",
-              fontSize: 11, fontWeight: 700,
+              borderRadius: 6, padding: "6px 11px", cursor: "pointer",
+              fontSize: 13, fontWeight: 700,
               color: showFanduelOnly ? "#2e7d32" : "#aaa",
               letterSpacing: "0.02em",
             }}>🟢 FD{fanduelGames.size > 0 ? ` ${fanduelGames.size}` : ""}{showFanduelOnly ? " ✓" : ""}</button>
-            <button onClick={() => setShowAlertPanel(true)} style={{ background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 6, padding: "4px 9px", cursor: "pointer", fontSize: 13, color: "#aaa" }}>🔔</button>
+            <button onClick={() => setShowAlertPanel(true)} style={{ background: "#fafafa", border: "1.5px solid #e0e0e0", borderRadius: 6, padding: "6px 11px", cursor: "pointer", fontSize: 15, color: "#aaa" }}>🔔</button>
             <button onClick={load} style={{
-              background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 6,
-              padding: "4px 9px", cursor: "pointer", fontSize: 12,
+              background: "#fafafa", border: "1.5px solid #e0e0e0", borderRadius: 6,
+              padding: "6px 11px", cursor: "pointer", fontSize: 14,
               color: countdown < 10 ? "#f57c00" : "#aaa",
               fontFamily: "monospace", display: "flex", alignItems: "center", gap: 4,
             }}>
@@ -1028,18 +1028,18 @@ export default function App() {
 
         {/* Error banners */}
         {error === "no_matches" && (
-          <div style={{ padding: "6px 14px", background: "#fffde7", borderBottom: "1px solid #fff9c4", fontSize: 11, color: "#f57f17" }}>
+          <div style={{ padding: "6px 14px", background: "#fffde7", borderBottom: "1.5px solid #fff9c4", fontSize: 13, color: "#f57f17" }}>
             ⚽ No live matches right now — showing demo data
           </div>
         )}
         {error === "api_error" && (
-          <div style={{ padding: "6px 14px", background: "#ffebee", borderBottom: "1px solid #ffcdd2", fontSize: 11, color: "#c62828" }}>
+          <div style={{ padding: "6px 14px", background: "#ffebee", borderBottom: "1.5px solid #ffcdd2", fontSize: 13, color: "#c62828" }}>
             ⚠️ API error — check APISPORTS_KEY in Vercel env vars
           </div>
         )}
 
         {/* Filter tabs */}
-        <div style={{ display: "flex", borderBottom: "1px solid #f0f0f0" }}>
+        <div style={{ display: "flex", borderBottom: "1.5px solid #f0f0f0" }}>
           {[
             { key: "ALL", label: `All ${matches.length}` },
             { key: "EXTREME", label: `🔥 ${matches.filter(m => m.heat_score >= 80).length}` },
@@ -1047,8 +1047,8 @@ export default function App() {
             { key: "OTHER", label: "Low" },
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setFilter(key)} style={{
-              flex: 1, padding: "10px 4px", border: "none", cursor: "pointer",
-              fontSize: 12, fontWeight: filter === key ? 700 : 400,
+              flex: 1, padding: "12px 6px", border: "none", cursor: "pointer",
+              fontSize: 14, fontWeight: filter === key ? 700 : 400,
               background: "#fff",
               color: filter === key ? "#e53935" : "#aaa",
               borderBottom: filter === key ? "2px solid #e53935" : "2px solid transparent",
@@ -1062,10 +1062,10 @@ export default function App() {
       {loading && matches.length === 0 ? (
         <div style={{ textAlign: "center", color: "#ccc", padding: "60px 0" }}>
           <div style={{ display: "inline-block", width: 28, height: 28, border: "3px solid #e53935", borderTopColor: "transparent", borderRadius: "50%", animation: "spin .8s linear infinite", marginBottom: 12 }} />
-          <div style={{ fontSize: 13 }}>Loading live matches…</div>
+          <div style={{ fontSize: 15 }}>Loading live matches…</div>
         </div>
       ) : displayed.length === 0 ? (
-        <div style={{ textAlign: "center", color: "#ccc", padding: "60px 0", fontSize: 13 }}>
+        <div style={{ textAlign: "center", color: "#ccc", padding: "60px 0", fontSize: 15 }}>
           {showFavsOnly ? "No favourites yet — tap ★ on a match." : "No matches in this category."}
         </div>
       ) : (
@@ -1078,13 +1078,13 @@ export default function App() {
             const topHeat = Math.max(...favMatches.map(m => m.heat_score));
             return (
               <div style={{ borderBottom: "3px solid #f9a825", marginBottom: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px", background: "linear-gradient(90deg,#fff8e1,#fff)", borderBottom: "1px solid #ffe082", borderTop: "1px solid #ffe082" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px", background: "linear-gradient(90deg,#fff8e1,#fff)", borderBottom: "1.5px solid #ffe082", borderTop: "1.5px solid #ffe082" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    <span style={{ fontSize: 15, color: "#f9a825" }}>★</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#f57f17", letterSpacing: "0.03em" }}>MY WATCHLIST</span>
-                    <span style={{ fontSize: 10, background: "#f9a825", color: "#fff", borderRadius: 10, padding: "1px 7px", fontWeight: 700 }}>{favMatches.length}</span>
+                    <span style={{ fontSize: 17, color: "#f9a825" }}>★</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#f57f17", letterSpacing: "0.03em" }}>MY WATCHLIST</span>
+                    <span style={{ fontSize: 12, background: "#f9a825", color: "#fff", borderRadius: 10, padding: "3px 9px", fontWeight: 700 }}>{favMatches.length}</span>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#f57c00", fontFamily: "monospace", background: "#fff8e1", border: "1px solid #ffe08266", borderRadius: 4, padding: "2px 7px" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#f57c00", fontFamily: "monospace", background: "#fff8e1", border: "1.5px solid #ffe08266", borderRadius: 4, padding: "6px 11px" }}>
                     TOP {topHeat}
                   </span>
                 </div>
@@ -1111,13 +1111,13 @@ export default function App() {
             const topHeat = Math.max(...fdMatches.map(m => m.heat_score));
             return (
               <div style={{ borderBottom: "3px solid #43a047", marginBottom: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px", background: "linear-gradient(90deg,#e8f5e9,#fff)", borderBottom: "1px solid #a5d6a7", borderTop: "1px solid #a5d6a7" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 14px", background: "linear-gradient(90deg,#e8f5e9,#fff)", borderBottom: "1.5px solid #a5d6a7", borderTop: "1.5px solid #a5d6a7" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                    <span style={{ fontSize: 14 }}>🟢</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32", letterSpacing: "0.03em" }}>FANDUEL LIVE</span>
-                    <span style={{ fontSize: 10, background: "#43a047", color: "#fff", borderRadius: 10, padding: "1px 7px", fontWeight: 700 }}>{fdMatches.length}</span>
+                    <span style={{ fontSize: 16 }}>🟢</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#2e7d32", letterSpacing: "0.03em" }}>FANDUEL LIVE</span>
+                    <span style={{ fontSize: 12, background: "#43a047", color: "#fff", borderRadius: 10, padding: "3px 9px", fontWeight: 700 }}>{fdMatches.length}</span>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#2e7d32", fontFamily: "monospace", background: "#e8f5e9", border: "1px solid #a5d6a766", borderRadius: 4, padding: "2px 7px" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#2e7d32", fontFamily: "monospace", background: "#e8f5e9", border: "1.5px solid #a5d6a766", borderRadius: 4, padding: "6px 11px" }}>
                     TOP {topHeat}
                   </span>
                 </div>
