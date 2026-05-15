@@ -1,1 +1,35 @@
+{
+  "name": "MomentumTrack Soccer",
+  "short_name": "MomentumTrack",
+  "description": "Real-time soccer momentum tracker for live betting signals",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e53935",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%23e53935'/><text x='96' y='130' text-anchor='middle' font-size='110'>⚽</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%23e53935'/><text x='256' y='340' text-anchor='middle' font-size='300'>⚽</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live Games",
+      "short_name": "Live",
+      "url": "/?filter=EXTREME",
+      "description": "View high heat live games"
+    }
+  ],
+  "categories": ["sports", "utilities"],
+  "screenshots": []
+}
 
