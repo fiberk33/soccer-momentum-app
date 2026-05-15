@@ -2,17 +2,46 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#080808" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#e53935" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="MomentumTrack" />
+
+    <!-- SEO -->
+    <meta name="description" content="Real-time soccer momentum tracker for live betting signals" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="MomentumTrack Soccer" />
+    <meta property="og:description" content="Real-time momentum tracking for live soccer betting" />
+    <meta property="og:type" content="website" />
+
     <title>MomentumTrack · Soccer</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⚽%3C/text%3E%3C/svg%3E" />
+
     <style>
-      html, body { background: #080808; margin: 0; }
-      body { font-family: 'Segoe UI', system-ui, sans-serif; color: #e0e0e0; }
+      html, body { background: #fff; margin: 0; padding: 0; }
+      body { font-family: 'Segoe UI', system-ui, sans-serif; }
+      /* Safe area for iPhone notch */
+      #root { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
     </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/main.jsx"></script>
+
+    <!-- Register Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('SW registered:', reg.scope))
+            .catch(err => console.log('SW failed:', err));
+        });
+      }
+    </script>
   </body>
-</html> 
+</html>
