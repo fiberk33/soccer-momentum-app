@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 const API_URL = "/api/all";
 const REFRESH = 60;
@@ -885,6 +885,9 @@ export default function App() {
   const [alertThreshold, setAlertThreshold] = useState(80);
   const [showAlertPanel, setShowAlertPanel] = useState(false);
   const [alertFired, setAlertFired] = useState(new Set());
+  const [betNowGames, setBetNowGames] = useState([]);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const audioCtxRef = useRef(null);
   const [tick, setTick] = useState(0);
 
   const load = useCallback(async () => {
@@ -928,16 +931,55 @@ export default function App() {
     return () => clearInterval(id);
   }, [load]);
 
+  // ── SOUND ENGINE ──────────────────────────────────────────────────────────
+  const playBeep = useCallback((frequency = 880, duration = 0.15, volume = 0.3) => {
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = frequency;
+      osc.type = "sine";
+      gain.gain.setValueAtTime(volume, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + duration);
+    } catch {}
+  }, []);
+
+  const playBetNowSound = useCallback(() => {
+    // Three ascending beeps = BET NOW alert
+    setTimeout(() => playBeep(660, 0.12), 0);
+    setTimeout(() => playBeep(880, 0.12), 150);
+    setTimeout(() => playBeep(1100, 0.2), 300);
+  }, [playBeep]);
+
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+
+    const newBetNow = [];
     matches.forEach(m => {
-      if (m.heat_score >= alertThreshold && !alertFired.has(m.fixture_id)) {
+      if (m.status === "NS" || m.status === "FT") return;
+      const isBetNow = m.heat_score >= alertThreshold && m.probability_trigger;
+
+      if (isBetNow && !alertFired.has(m.fixture_id)) {
+        // Browser notification
         if (Notification.permission === "granted")
-          new Notification(`🔔 Heat Alert ≥${alertThreshold}`, { body: `${m.home.name} vs ${m.away.name} — ${m.heat_score} pts (${m.minute}′)` });
+          new Notification(`🚨 BET NOW — ${m.home.name} vs ${m.away.name}`, {
+            body: `Score ${m.home.goals}–${m.away.goals} · ${m.minute}′ · ${m.best_bet || "Over 0.5"}`,
+          });
+        // Sound
+        if (soundEnabled) playBetNowSound();
         setAlertFired(prev => new Set([...prev, m.fixture_id]));
       }
+
+      if (isBetNow) newBetNow.push(m);
     });
-  }, [matches, alertThreshold, alertFired]);
+
+    setBetNowGames(newBetNow.sort((a, b) => b.heat_score - a.heat_score));
+  }, [matches, alertThreshold, alertFired, soundEnabled, playBetNowSound]);
 
   const toggleFav = id => setFavourites(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const toggleFanduel = id => setFanduelGames(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -1011,6 +1053,9 @@ export default function App() {
               color: showFanduelOnly ? "#2e7d32" : "#aaa",
               letterSpacing: "0.02em",
             }}>🟢 FD{fanduelGames.size > 0 ? ` ${fanduelGames.size}` : ""}{showFanduelOnly ? " ✓" : ""}</button>
+            <button onClick={() => setSoundEnabled(s => !s)} style={{ background: soundEnabled ? "#e8f5e9" : "#fafafa", border: `1.5px solid ${soundEnabled ? "#a5d6a7" : "#e0e0e0"}`, borderRadius: 6, padding: "6px 11px", cursor: "pointer", fontSize: 14, fontWeight: 800, color: soundEnabled ? "#2e7d32" : "#aaa" }} title={soundEnabled ? "Sound ON — tap to mute" : "Sound OFF — tap to enable"}>
+              {soundEnabled ? "🔊" : "🔇"}
+            </button>
             <button onClick={() => setShowAlertPanel(true)} style={{ background: "#fafafa", border: "1.5px solid #e0e0e0", borderRadius: 6, padding: "6px 11px", cursor: "pointer", fontSize: 17, color: "#777" }}>🔔</button>
             <button onClick={load} style={{
               background: "#fafafa", border: "1.5px solid #e0e0e0", borderRadius: 6,
@@ -1059,6 +1104,40 @@ export default function App() {
       </div>
 
       {/* ── MATCH LIST ── */}
+      {/* ── BET NOW BANNER ── */}
+      {betNowGames.length > 0 && (
+        <div style={{ margin: "8px 0", animation: "betpulse 1.5s ease-in-out infinite" }}>
+          <div style={{ background: "linear-gradient(135deg, #c62828, #e53935)", borderRadius: 10, padding: "12px 16px", boxShadow: "0 4px 20px #e5393544" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 20 }}>🚨</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>BET NOW</span>
+              <span style={{ fontSize: 12, background: "#ffffff33", color: "#fff", borderRadius: 10, padding: "2px 8px", fontWeight: 700 }}>{betNowGames.length} game{betNowGames.length > 1 ? "s" : ""}</span>
+              <span style={{ marginLeft: "auto", fontSize: 12, color: "#ffffff99" }}>Probability trigger fired</span>
+            </div>
+            {betNowGames.map(m => (
+              <div key={m.fixture_id} style={{ background: "#ffffff18", borderRadius: 8, padding: "10px 12px", marginBottom: betNowGames.indexOf(m) < betNowGames.length - 1 ? 6 : 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
+                    {m.home.name} {m.home.goals}–{m.away.goals} {m.away.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#ffffff99", marginTop: 2 }}>
+                    {m.minute}′ · {m.league} · {m.best_bet || "Over 0.5 Next Goal"}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: "monospace", lineHeight: 1 }}>
+                    {m.heat_score}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#ffffff88", fontFamily: "monospace" }}>
+                    heat
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loading && matches.length === 0 ? (
         <div style={{ textAlign: "center", color: "#666", padding: "60px 0" }}>
           <div style={{ display: "inline-block", width: 28, height: 28, border: "3px solid #e53935", borderTopColor: "transparent", borderRadius: "50%", animation: "spin .8s linear infinite", marginBottom: 12 }} />
