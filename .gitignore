@@ -1,20 +1,4 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-.venv/
-venv/
+node_modules
+dist
 .env
-
-# Node / Vite
-node_modules/
-dist/
-.vite/
-.env.local
-.env.*.local
-
-# Editor
-.vscode/
-.idea/
-.DS_Store
-*.log
+*.py
