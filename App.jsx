@@ -638,6 +638,37 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
           </div>
         </div>
 
+        {/* CONFIDENCE INDICATOR */}
+        {m.status !== "NS" && m.status !== "FT" && (() => {
+          const gp = calcGoalProb(m);
+          const heatHigh = m.heat_score >= 55;
+          const probHigh = gp.rounded >= 6;
+          const heatMed  = m.heat_score >= 35;
+          const probMed  = gp.rounded >= 4;
+
+          let conf = null;
+          if (heatHigh && probHigh) {
+            conf = { label: "⚡ HIGH CONFIDENCE BET", sublabel: `Heat ${m.heat_score} + ${gp.probPct}% goal chance — both signals aligned`, bg: "#e8f5e9", border: "#43a047", color: "#1b5e20", dot: "#43a047" };
+          } else if (!heatHigh && probHigh) {
+            conf = { label: "🟡 MODERATE — Score-Driven", sublabel: `Goal prob ${gp.probPct}% from score state, not pressure. Verify on FanDuel.`, bg: "#fffde7", border: "#f9a825", color: "#e65100", dot: "#f9a825" };
+          } else if (heatHigh && !probHigh) {
+            conf = { label: "⚪ PRESSURE — LOW CHANCE", sublabel: `Heat ${m.heat_score} but only ${gp.probPct}% goal prob. Game may be decided.`, bg: "#f5f5f5", border: "#bbb", color: "#666", dot: "#bbb" };
+          } else if (heatMed && probMed) {
+            conf = { label: "👀 WATCH", sublabel: `Building — Heat ${m.heat_score}, ${gp.probPct}% chance. Not ready yet.`, bg: "#fff8f0", border: "#ffcc80", color: "#e65100", dot: "#ffcc80" };
+          }
+
+          if (!conf) return null;
+          return (
+            <div style={{ marginBottom: 8, padding: "7px 10px", background: conf.bg, border: `1.5px solid ${conf.border}`, borderRadius: 8, display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: conf.dot, flexShrink: 0, marginTop: 4 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: conf.color }}>{conf.label}</div>
+                <div style={{ fontSize: 12, color: conf.color, opacity: 0.8, marginTop: 2 }}>{conf.sublabel}</div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ROW 2: Signals | Goal Probability */}
         {m.status !== "NS" && m.status !== "FT" && (
           <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
