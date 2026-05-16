@@ -382,8 +382,6 @@ function calcGoalProb(m) {
   // significant drop in defensive intensity — MORE goals conceded, less structure
   const homeMot = m.home.motivation?.score || 5;
   const awayMot = m.away.motivation?.score || 5;
-  const homeGoals = m.home.goals || 0;
-  const awayGoals = m.away.goals || 0;
   const homeTrailing = homeGoals < awayGoals;
   const awayTrailing = awayGoals < homeGoals;
   const bothDrawing = homeGoals === awayGoals;
