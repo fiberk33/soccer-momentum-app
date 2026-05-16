@@ -1057,7 +1057,7 @@ export default function App() {
         {/* Filter tabs */}
         <div style={{ display: "flex", borderBottom: "1.5px solid #f0f0f0" }}>
           {[
-            { key: "ALL", label: `All ${matches.length}` },
+            { key: "ALL", label: `All ${matches.length} · v3` },
             { key: "EXTREME", label: `🔥 ${matches.filter(m => m.heat_score >= 80).length}` },
             { key: "HIGH", label: `🟠 ${matches.filter(m => m.heat_score >= 60 && m.heat_score < 80).length}` },
             { key: "OTHER", label: "Low" },
