@@ -304,6 +304,138 @@ function MatchDetail({ m }) {
   );
 }
 
+// ─── FIRST HALF SCORE PREDICTOR ──────────────────────────────────────────────
+// Dedicated HT prediction using 1H-specific research:
+// - PerformanceOdds (2026): 70%+ of 1H goals in 35-45' window
+// - Late 1H goals predict Over 2.5 FT (correlated momentum signal)
+// - Corners + box pressure spike in final 10 mins of 1H
+// - Attack duration & possession zone > raw possession % (NCAA/FIFA 2024)
+
+function calcHalfTimeScore(m) {
+  if (m.status !== "1H") return null;
+  const minute = m.minute;
+  if (minute < 1) return null;
+
+  const homeGoals = m.home.goals || 0;
+  const awayGoals = m.away.goals || 0;
+  const totalGoals = homeGoals + awayGoals;
+  const minsToHT = Math.max(0, 45 - minute);
+  const inVilaWindow = minute >= 35;
+
+  // Base lambda for 1H: avg 1.1 goals/45min in top leagues = 0.0244/min
+  let lambda = 0.0244;
+  const reasons = [];
+
+  // 1. VILA WINDOW BOOST (biggest 1H signal)
+  // 70%+ of 1H goals come 35-45' (PerformanceOdds 2026)
+  if (minute >= 40) {
+    lambda *= 2.2;
+    reasons.push(`⏱️ Peak window (${minute}′) — 70% of 1H goals here`);
+  } else if (minute >= 35) {
+    lambda *= 1.8;
+    reasons.push(`⏱️ Vila window active — entering peak 1H period`);
+  } else if (minute >= 28) {
+    lambda *= 1.3;
+    reasons.push(`📈 Approaching Vila window`);
+  }
+
+  // 2. CORNER RATE (box pressure proxy — strongest 1H predictor)
+  const totalCorners = (m.home.corners || 0) + (m.away.corners || 0);
+  const cornerRate = totalCorners / Math.max(minute, 1) * 45;
+  if (cornerRate >= 8) {
+    lambda *= 1.35;
+    reasons.push(`🚩 High corner rate: ${totalCorners} corners (${cornerRate.toFixed(1)}/45)`);
+  } else if (cornerRate >= 5) {
+    lambda *= 1.15;
+    reasons.push(`🚩 ${totalCorners} corners — box pressure building`);
+  }
+
+  // 3. SHOTS ON TARGET (xG proxy)
+  const totalSOT = (m.home.shots_on_target || 0) + (m.away.shots_on_target || 0);
+  const sotRate = totalSOT / Math.max(minute, 1) * 45;
+  if (sotRate >= 8) {
+    lambda *= 1.4;
+    reasons.push(`🎯 High xG proxy: ${totalSOT} shots on target`);
+  } else if (sotRate >= 5) {
+    lambda *= 1.2;
+    reasons.push(`🎯 ${totalSOT} shots on target`);
+  }
+
+  // 4. POSSESSION DOMINANCE (sustained box pressure)
+  const maxPoss = Math.max(m.home.possession || 0, m.away.possession || 0);
+  if (maxPoss >= 68) {
+    lambda *= 1.18;
+    reasons.push(`⚡ One team dominating ${maxPoss}% possession`);
+  }
+
+  // 5. DANGEROUS ATTACK RATE
+  const dapm = m.dangerous_attacks_per_min || 0;
+  if (dapm >= 2.0) {
+    lambda *= 1.25;
+    reasons.push(`💥 Very high attack rate: ${dapm.toFixed(1)}/min`);
+  } else if (dapm >= 1.5) {
+    lambda *= 1.12;
+  }
+
+  // 6. ALREADY SCORED — open game
+  if (totalGoals >= 2) {
+    lambda *= 1.3;
+    reasons.push(`🔥 ${totalGoals} goals already — open game`);
+  } else if (totalGoals === 1) {
+    lambda *= 1.1;
+  }
+
+  // 7. SCORE STATE — trailing team pushes in 1H
+  const diff = Math.abs(homeGoals - awayGoals);
+  if (diff >= 2) lambda *= 0.8; // big lead = trailing team gives up in 1H
+  else if (diff === 1 && minute >= 35) {
+    lambda *= 1.2;
+    reasons.push(`⚡ Trailing by 1 — pushing before HT`);
+  }
+
+  // Poisson: P(≥1 goal in minsToHT)
+  const expectedGoals = lambda * minsToHT;
+  const probGoal = minsToHT > 0 ? 1 - Math.exp(-expectedGoals) : 0;
+  const probPct = Math.round(probGoal * 100);
+
+  // Score (1-10)
+  const score = Math.min(10, Math.max(1, 1 + probGoal * 9));
+
+  // Current HT score prediction
+  // Most likely HT score based on current + expected goals
+  const expMoreGoals = expectedGoals;
+  const htHomeGoals = homeGoals + (m.home.possession > m.away.possession ? expMoreGoals * 0.55 : expMoreGoals * 0.45);
+  const htAwayGoals = awayGoals + (m.away.possession > m.home.possession ? expMoreGoals * 0.55 : expMoreGoals * 0.45);
+
+  // Best HT bet
+  let bestBet = "Over 0.5 Goals Before HT";
+  if (totalGoals >= 1 && probPct >= 55) bestBet = `Over ${totalGoals}.5 Goals at HT`;
+  else if (totalGoals === 0 && probPct >= 65) bestBet = "Over 0.5 Goals at HT";
+  else if (totalGoals === 0 && probPct < 40) bestBet = "Under 0.5 Goals at HT";
+
+  const label = Math.round(score) >= 8 ? "STRONG HT BET"
+    : Math.round(score) >= 6 ? "FAIR HT BET"
+    : Math.round(score) >= 4 ? "WEAK"
+    : "SKIP";
+
+  const color = Math.round(score) >= 8 ? "#c62828"
+    : Math.round(score) >= 6 ? "#e65100"
+    : Math.round(score) >= 4 ? "#f9a825"
+    : "#aaa";
+
+  return {
+    score: Math.round(score * 10) / 10,
+    probPct,
+    minsToHT,
+    bestBet,
+    label,
+    color,
+    reasons,
+    inVilaWindow,
+    currentScore: `${homeGoals}-${awayGoals}`,
+  };
+}
+
 // ─── SCIENTIFIC GOAL PROBABILITY ENGINE ──────────────────────────────────────
 // Based on:
 // - Dixon & Robinson (1998): Doubly stochastic Poisson process — goal rate
@@ -664,6 +796,45 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
               <div>
                 <div style={{ fontSize: 13, fontWeight: 800, color: conf.color }}>{conf.label}</div>
                 <div style={{ fontSize: 12, color: conf.color, opacity: 0.8, marginTop: 2 }}>{conf.sublabel}</div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* FIRST HALF PREDICTOR — only shows during 1H */}
+        {m.status === "1H" && (() => {
+          const ht = calcHalfTimeScore(m);
+          if (!ht || ht.minsToHT <= 0) return null;
+          return (
+            <div style={{ marginBottom: 8, background: "#f3e5f5", border: `1.5px solid #9c27b0`, borderRadius: 8, padding: "8px 10px" }}>
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 14 }}>🏁</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#6a1b9a" }}>HT PREDICTOR</span>
+                  <span style={{ fontSize: 11, color: "#9c27b0", fontFamily: "monospace" }}>{ht.minsToHT}′ to HT</span>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <span style={{ fontSize: 16, fontWeight: 900, color: ht.color, fontFamily: "monospace" }}>{ht.score}</span>
+                  <span style={{ fontSize: 11, color: ht.color, marginLeft: 4, fontWeight: 700 }}>{ht.label}</span>
+                </div>
+              </div>
+              {/* Probability bar */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <div style={{ flex: 1, height: 8, background: "#e1bee7", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ width: `${ht.probPct}%`, height: "100%", background: ht.color, borderRadius: 4, transition: "width .6s" }} />
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 800, color: ht.color, fontFamily: "monospace", minWidth: 36 }}>{ht.probPct}%</span>
+              </div>
+              {/* Best bet */}
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#6a1b9a", marginBottom: 4 }}>
+                → {ht.bestBet}
+              </div>
+              {/* Key reasons */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                {ht.reasons.map((r, i) => (
+                  <span key={i} style={{ fontSize: 11, color: "#7b1fa2", background: "#e1bee7", borderRadius: 10, padding: "2px 7px" }}>{r}</span>
+                ))}
               </div>
             </div>
           );
