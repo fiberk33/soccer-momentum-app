@@ -733,15 +733,31 @@ export default function App() {
   const [countdown, setCountdown] = useState(REFRESH);
   const [expanded, setExpanded] = useState(null);
   const [filter, setFilter] = useState("ALL");
-  const [favourites, setFavourites] = useState(new Set());
+  const [favourites, setFavourites] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mt_favourites');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
   const [showFavsOnly, setShowFavsOnly] = useState(false);
-  const [fanduelGames, setFanduelGames] = useState(new Set());
+  const [fanduelGames, setFanduelGames] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mt_fanduel');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
   const [showFanduelOnly, setShowFanduelOnly] = useState(false);
-  const [alertThreshold, setAlertThreshold] = useState(80);
+  const [alertThreshold, setAlertThreshold] = useState(() => {
+    try { return parseInt(localStorage.getItem('mt_threshold') || '80'); }
+    catch { return 80; }
+  });
   const [showAlertPanel, setShowAlertPanel] = useState(false);
   const [alertFired, setAlertFired] = useState(new Set());
   const [betNowGames, setBetNowGames] = useState([]);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    try { return localStorage.getItem('mt_sound') !== 'false'; }
+    catch { return true; }
+  });
   const audioCtxRef = useRef(null);
   const [tick, setTick] = useState(0);
 
@@ -836,8 +852,18 @@ export default function App() {
     setBetNowGames(newBetNow.sort((a, b) => b.heat_score - a.heat_score));
   }, [matches, alertThreshold, alertFired, soundEnabled, playBetNowSound]);
 
-  const toggleFav = id => setFavourites(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const toggleFanduel = id => setFanduelGames(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleFav = id => setFavourites(prev => {
+    const n = new Set(prev);
+    n.has(id) ? n.delete(id) : n.add(id);
+    try { localStorage.setItem('mt_favourites', JSON.stringify([...n])); } catch {}
+    return n;
+  });
+  const toggleFanduel = id => setFanduelGames(prev => {
+    const n = new Set(prev);
+    n.has(id) ? n.delete(id) : n.add(id);
+    try { localStorage.setItem('mt_fanduel', JSON.stringify([...n])); } catch {}
+    return n;
+  });
 
   let displayed = [...matches];
   if (filterLive) displayed = displayed.filter(m => m.status !== "NS" && m.status !== "FT");
@@ -863,7 +889,10 @@ export default function App() {
         body { background: #f5f5f5; }
       `}</style>
 
-      {showAlertPanel && <AlertPanel threshold={alertThreshold} onChange={setAlertThreshold} onClose={() => setShowAlertPanel(false)} />}
+      {showAlertPanel && <AlertPanel threshold={alertThreshold} onChange={v => {
+                setAlertThreshold(v);
+                try { localStorage.setItem('mt_threshold', String(v)); } catch {}
+              }} onClose={() => setShowAlertPanel(false)} />}
 
       {/* ── HEADER ── */}
       <div style={{ position: "sticky", top: 0, zIndex: 100, background: "#fff", boxShadow: "0 1px 4px #0000000f" }}>
@@ -900,7 +929,11 @@ export default function App() {
             <button onClick={() => setShowFanduelOnly(f => !f)} style={{ flex: 1, background: showFanduelOnly ? "#e8f5e9" : "#fafafa", border: `1px solid ${showFanduelOnly ? "#43a04766" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 6px", cursor: "pointer", fontSize: 13, fontWeight: 700, color: showFanduelOnly ? "#2e7d32" : "#777", textAlign: "center" }}>
               🟢 FanDuel{fanduelGames.size > 0 ? ` (${fanduelGames.size})` : ""}
             </button>
-            <button onClick={() => setSoundEnabled(s => !s)} style={{ background: soundEnabled ? "#e8f5e9" : "#fafafa", border: `1px solid ${soundEnabled ? "#a5d6a7" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 16 }}>
+            <button onClick={() => setSoundEnabled(s => {
+              const next = !s;
+              try { localStorage.setItem('mt_sound', String(next)); } catch {}
+              return next;
+            })} style={{ background: soundEnabled ? "#e8f5e9" : "#fafafa", border: `1px solid ${soundEnabled ? "#a5d6a7" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 16 }}>
               {soundEnabled ? "🔊" : "🔇"}
             </button>
             <button onClick={() => setShowAlertPanel(true)} style={{ background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 16 }}>🔔</button>
