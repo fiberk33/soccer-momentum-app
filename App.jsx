@@ -524,18 +524,44 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
   const dominant = m.home.possession > m.away.possession ? m.home : m.away;
   const recessive = dominant === m.home ? m.away : m.home;
 
-  if (bd.vila_effect > 0)
-    signals.push({ icon: "⏱️", text: "Vila Window", bet: "Over 0.5", color: "#f9a825" });
-  if (bd.red_card_multiplier > 0)
-    signals.push({ icon: "🟥", text: "Red Card", bet: recessive.red_cards > 0 ? `${dominant.name} Next Goal` : `${recessive.name} Next Goal`, color: "#e53935" });
-  if (isDraw && m.minute > 60)
-    signals.push({ icon: "⚡", text: "Late Draw", bet: "Over 0.5", color: "#7b1fa2" });
+  if (bd.vila_effect > 0) {
+    const isEnd2H = m.minute >= 80;
+    const vilaConf = isEnd2H ? "76%" : "61%";
+    const vilaLabel = isEnd2H ? `Vila 80'+ — peak pressure` : `Vila ${m.minute}'— end of half`;
+    signals.push({ icon: "⏱️", text: vilaLabel, bet: `Over 0.5 Next Goal (${vilaConf})`, color: "#f9a825" });
+  }
+  if (bd.red_card_multiplier > 0) {
+    const tenManTeam = (m.home.red_cards || 0) > 0 ? m.home : m.away;
+    const fullTeam = tenManTeam === m.home ? m.away : m.home;
+    signals.push({ icon: "🟥", text: `${tenManTeam.name} 10 men`, bet: `${fullTeam.name} Next Goal (73%)`, color: "#e53935" });
+  }
+  if (isDraw && m.minute > 60) {
+    const minsLeft = m.minute >= 80 ? 90 - m.minute : 90 - m.minute;
+    const drawConf = m.minute >= 83 ? "82%" : m.minute >= 75 ? "71%" : "58%";
+    const drawLabel = m.minute >= 83 ? "Late draw — desperate" : m.minute >= 75 ? "Draw 75'+ — urgent" : "Draw — both pushing";
+    signals.push({ icon: "⚡", text: drawLabel, bet: `Over 0.5 Next Goal (${drawConf})`, color: "#7b1fa2" });
+  }
   if (dominant.possession >= 65)
     signals.push({ icon: "🔵", text: `${dominant.name} pressing`, bet: `${dominant.name} Next Goal`, color: "#1565c0" });
-  if ((m.home.goals + m.away.goals) >= 3)
-    signals.push({ icon: "🔥", text: "High Scoring", bet: "Over 0.5", color: "#e53935" });
-  if (diff === 1 && m.minute > 70)
-    signals.push({ icon: "📈", text: "1 Goal Late", bet: "Over 0.5", color: "#2e7d32" });
+  const totalGoals = (m.home.goals || 0) + (m.away.goals || 0);
+  const goalDiff = Math.abs((m.home.goals || 0) - (m.away.goals || 0));
+  const isDrawHS = goalDiff === 0;
+  const trailingTeam = (m.home.goals || 0) < (m.away.goals || 0) ? m.home : m.away;
+  if (totalGoals >= 3) {
+    const hsLabel = totalGoals >= 5 ? `${totalGoals} goals — chaos` : totalGoals >= 4 ? `${totalGoals} goals — wide open` : `${totalGoals} goals scored`;
+    const hsBet = isDrawHS
+      ? `${totalGoals}-${totalGoals} draw — both teams exposed → Over 0.5`
+      : goalDiff === 1 && m.minute >= 65
+        ? `${trailingTeam.name} chasing → Next Goal`
+        : "Over 0.5 Next Goal";
+    const hsConf = totalGoals >= 5 ? "90%" : totalGoals >= 4 ? "78%" : isDrawHS ? "74%" : "66%";
+    signals.push({ icon: "🔥", text: hsLabel, bet: `${hsBet} (${hsConf})`, color: "#e53935" });
+  }
+  if (diff === 1 && m.minute > 70) {
+    const behind = (m.home.goals || 0) < (m.away.goals || 0) ? m.home : m.away;
+    const oneGoalConf = m.minute >= 80 ? "69%" : "54%";
+    signals.push({ icon: "📈", text: `${behind.name} chasing`, bet: `${behind.name} Next Goal (${oneGoalConf})`, color: "#2e7d32" });
+  }
   if (m.dangerous_attacks_per_min >= 1.5)
     signals.push({ icon: "⚡", text: "High Attacks", bet: "Over 0.5", color: "#f57c00" });
 
