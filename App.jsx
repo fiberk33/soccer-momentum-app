@@ -897,24 +897,38 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
 }
 
 // ─── LEAGUE HEADER ────────────────────────────────────────────────────────────
-function LeagueHeader({ label, topHeat }) {
+function LeagueHeader({ label, topHeat, onHide }) {
   const color = heatColor(topHeat);
   return (
     <div style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "9px 16px", background: "#f5f5f5",
+      padding: "9px 14px", background: "#f5f5f5",
       borderBottom: "1.5px solid #e8e8e8", borderTop: "1.5px solid #e8e8e8",
+      gap: 8,
     }}>
-      <span style={{ fontSize: 15, fontWeight: 700, color: "#666", letterSpacing: "0.03em" }}>{label}</span>
-      {topHeat >= 40 && (
-        <span style={{
-          fontSize: 14, fontWeight: 700, color,
-          background: `${color}15`, border: `1px solid ${color}44`,
-          borderRadius: 4, padding: "6px 11px", fontFamily: "monospace",
-        }}>
-          {topHeat >= 80 ? "🔥" : topHeat >= 60 ? "🟠" : "🟡"} {topHeat}
-        </span>
-      )}
+      <span style={{ fontSize: 14, fontWeight: 700, color: "#555", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+        {topHeat >= 40 && (
+          <span style={{
+            fontSize: 13, fontWeight: 700, color,
+            background: `${color}15`, border: `1px solid ${color}44`,
+            borderRadius: 4, padding: "3px 8px", fontFamily: "monospace",
+          }}>
+            {topHeat >= 80 ? "🔥" : topHeat >= 60 ? "🟠" : "🟡"} {topHeat}
+          </span>
+        )}
+        <button
+          onClick={e => { e.stopPropagation(); onHide && onHide(label); }}
+          title="Hide this league"
+          style={{
+            background: "#ddd", border: "none", borderRadius: 6,
+            width: 28, height: 28, cursor: "pointer",
+            fontSize: 18, fontWeight: 700, color: "#666",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            lineHeight: 1, flexShrink: 0,
+          }}
+        >−</button>
+      </div>
     </div>
   );
 }
