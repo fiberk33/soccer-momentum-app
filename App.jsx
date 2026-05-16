@@ -982,6 +982,12 @@ export default function App() {
   const [showAlertPanel, setShowAlertPanel] = useState(false);
   const [alertFired, setAlertFired] = useState(new Set());
   const [betNowGames, setBetNowGames] = useState([]);
+  const [hiddenLeagues, setHiddenLeagues] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mt_hidden_leagues');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try { return localStorage.getItem('mt_sound') !== 'false'; }
     catch { return true; }
@@ -1086,6 +1092,13 @@ export default function App() {
     try { localStorage.setItem('mt_favourites', JSON.stringify([...n])); } catch {}
     return n;
   });
+  const toggleLeague = label => setHiddenLeagues(prev => {
+    const n = new Set(prev);
+    n.has(label) ? n.delete(label) : n.add(label);
+    try { localStorage.setItem('mt_hidden_leagues', JSON.stringify([...n])); } catch {}
+    return n;
+  });
+
   const toggleFanduel = id => setFanduelGames(prev => {
     const n = new Set(prev);
     n.has(id) ? n.delete(id) : n.add(id);
@@ -1101,10 +1114,12 @@ export default function App() {
   else if (filter === "HIGH") displayed = displayed.filter(m => m.heat_score >= 60 && m.heat_score < 80);
   else if (filter === "OTHER") displayed = displayed.filter(m => m.heat_score < 60);
 
+  // Filter out hidden leagues
+  const filteredDisplayed = displayed.filter(m => !hiddenLeagues.has(`${m.country} — ${m.league}`));
   // Exclude favourited games from league groups (they show in watchlist already)
   const leagueDisplayed = favourites.size > 0
-    ? displayed.filter(m => !favourites.has(m.fixture_id))
-    : displayed;
+    ? filteredDisplayed.filter(m => !favourites.has(m.fixture_id))
+    : filteredDisplayed;
   const groups = groupByLeague(leagueDisplayed);
   const extremeCount = matches.filter(m => m.heat_score >= 80).length;
 
@@ -1316,7 +1331,7 @@ export default function App() {
           {/* LEAGUE GROUPS */}
           {groups.map(group => (
             <div key={group.label}>
-              <LeagueHeader label={group.label} topHeat={Math.max(...group.matches.map(m => m.heat_score))} />
+              <LeagueHeader label={group.label} topHeat={Math.max(...group.matches.map(m => m.heat_score))} onHide={toggleLeague} />
               {group.matches.map(m => (
                 <MatchRow
                   key={m.fixture_id}
@@ -1331,6 +1346,25 @@ export default function App() {
               ))}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Hidden leagues restore bar */}
+      {hiddenLeagues.size > 0 && (
+        <div style={{ margin: "12px 14px", padding: "10px 14px", background: "#fff3e0", border: "1.5px solid #ffcc80", borderRadius: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#e65100" }}>👁️ Hidden Leagues ({hiddenLeagues.size})</span>
+            <button onClick={() => { setHiddenLeagues(new Set()); try { localStorage.removeItem('mt_hidden_leagues'); } catch {} }} style={{ fontSize: 12, background: "#ff9800", color: "#fff", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", fontWeight: 700 }}>
+              Show All
+            </button>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {[...hiddenLeagues].map(league => (
+              <button key={league} onClick={() => toggleLeague(league)} style={{ fontSize: 12, background: "#fff", border: "1px solid #ffcc80", borderRadius: 16, padding: "4px 10px", cursor: "pointer", color: "#e65100", fontWeight: 600 }}>
+                + {league.split(" — ")[1] || league}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
