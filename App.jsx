@@ -544,264 +544,127 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
   const topSignals = signals.slice(0, 5);
 
   return (
-    <div style={{ borderBottom: "1.5px solid #f0f0f0" }}>
+    <div style={{ borderBottom: "2px solid #f0f0f0" }}>
       <div onClick={onToggle} style={{
-        display: "flex", alignItems: "flex-start", padding: "10px 10px 10px 12px",
-        cursor: "pointer", background: expanded ? "#fafafa" : m.status === "FT" ? "#f9f9f9" : "#fff",
-        transition: "background .15s", gap: 8, opacity: m.status === "FT" ? 0.75 : 1,
+        padding: "12px 14px",
+        cursor: "pointer",
+        background: expanded ? "#fafafa" : m.status === "FT" ? "#f9f9f9" : "#fff",
+        opacity: m.status === "FT" ? 0.75 : 1,
       }}>
 
-        {/* Minute / Kickoff */}
-        <div style={{ width: 44, flexShrink: 0, textAlign: "center", paddingTop: 2 }}>
-          <Tooltip text={
-            m.status === "NS" ? `Kicks off at ${m.kickoff_display} — ${m.time_until} from now` :
-            m.status === "HT" ? "Half time — teams in the dressing room. Vila Effect active." :
-            m.status === "FT" ? "Full time — match finished" :
-            isVila ? `${m.minute}′ — VILA WINDOW: Last 10 mins of half. Goal probability spikes +25–40% historically.` :
-            `Minute ${m.minute} — live match in progress`
-          }>
-          {m.status === "NS" ? (
-            <>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#1565c0", fontFamily: "monospace", lineHeight: 1.5 }}>{m.kickoff_display}</div>
-              <div style={{ fontSize: 12, color: "#1565c0", fontWeight: 600, marginTop: 2 }}>{m.time_until}</div>
-            </>
-          ) : m.status === "HT" ? (
-            <>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#7b1fa2", fontFamily: "monospace", lineHeight: 1.5 }}>HT</div>
-              <div style={{ fontSize: 12, color: "#7b1fa2", fontWeight: 600, marginTop: 2 }}>45′</div>
-            </>
-          ) : m.status === "FT" ? (
-            <>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#388e3c", fontFamily: "monospace", lineHeight: 1.5 }}>FT</div>
-              <div style={{ fontSize: 12, color: "#388e3c", fontWeight: 600, marginTop: 2 }}>90′</div>
-            </>
-          ) : (
-            <>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#e53935", fontFamily: "monospace", lineHeight: 1.5 }}>
-                {m.minute}′
-              </div>
-              {isVila && <div style={{ fontSize: 12, color: "#f9a825", fontWeight: 700, marginTop: 2 }}>VILA</div>}
-            </>
-          )}
-          </Tooltip>
-        </div>
+        {/* ROW 1: Minute | Teams & Score | Heat ring */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
 
-        {/* Divider */}
-        <div style={{ width: 1, alignSelf: "stretch", background: "#f0f0f0", flexShrink: 0 }} />
-
-        {/* Teams + Scores + Motivation — col 1 */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-
-          {/* ── HOME TEAM ── */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flex: 1 }}>
-              {m.home.logo && <img src={m.home.logo} width="16" height="16" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />}
-              <span style={{ fontSize: 16, color: homeWin ? "#111" : "#555", fontWeight: homeWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {m.home.name}
-              </span>
-              {m.home.red_cards > 0 && <span style={{ fontSize: 12, background: "#e53935", color: "#fff", borderRadius: 2, padding: "2px 5px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
-              {isVila && m.home.vila?.isVilaTeam && (
-                <span style={{ fontSize: 12, borderRadius: 3, padding: "2px 6px", flexShrink: 0, fontWeight: 700, background: m.home.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.home.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.home.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
-                  ⏱{m.home.vila.lateGoalRate}%
-                </span>
-              )}
-            </div>
-            <span style={{ fontSize: 19, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.home.goals}</span>
+          {/* Minute */}
+          <div style={{ width: 46, flexShrink: 0, textAlign: "center" }}>
+            {m.status === "NS" ? (<>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#1565c0", fontFamily: "monospace" }}>{m.kickoff_display}</div>
+              <div style={{ fontSize: 12, color: "#1565c0" }}>{m.time_until}</div>
+            </>) : m.status === "HT" ? (<>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#7b1fa2", fontFamily: "monospace" }}>HT</div>
+              <div style={{ fontSize: 12, color: "#7b1fa2" }}>45′</div>
+            </>) : m.status === "FT" ? (<>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#388e3c", fontFamily: "monospace" }}>FT</div>
+              <div style={{ fontSize: 12, color: "#388e3c" }}>90′</div>
+            </>) : (<>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#e53935", fontFamily: "monospace" }}>{m.minute}′</div>
+              {isVila && <div style={{ fontSize: 11, color: "#f9a825", fontWeight: 800 }}>VILA</div>}
+            </>)}
           </div>
 
-
-          {/* Away row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flex: 1 }}>
-              {m.away.logo && <img src={m.away.logo} width="16" height="16" style={{ borderRadius: 2, flexShrink: 0 }} alt="" onError={e => e.target.style.display = "none"} />}
-              <span style={{ fontSize: 16, color: awayWin ? "#111" : "#555", fontWeight: awayWin ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {m.away.name}
-              </span>
-              {m.away.red_cards > 0 && <span style={{ fontSize: 12, background: "#e53935", color: "#fff", borderRadius: 2, padding: "2px 5px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
-              {isVila && m.away.vila?.isVilaTeam && (
-                <span style={{ fontSize: 12, borderRadius: 3, padding: "2px 6px", flexShrink: 0, fontWeight: 700, background: m.away.vila.isStrongVila ? "#f9a825" : "#fff3e0", color: m.away.vila.isStrongVila ? "#fff" : "#f57c00", border: `1px solid ${m.away.vila.isStrongVila ? "#f9a825" : "#ffe082"}` }}>
-                  ⏱{m.away.vila.lateGoalRate}%
-                </span>
-              )}
-            </div>
-            <span style={{ fontSize: 19, fontWeight: 800, color: "#111", marginLeft: 6, flexShrink: 0 }}>{m.away.goals}</span>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div style={{ width: 1, alignSelf: "stretch", background: "#f0f0f0", flexShrink: 0 }} />
-
-        {/* Signals column — col 2 */}
-        <div style={{ width: 95, flexShrink: 0, display: "flex", flexDirection: "column", gap: 5 }}>
-          {topSignals.length === 0 ? (
-            <div style={{ fontSize: 12, color: "#888", fontStyle: "italic", marginTop: 2 }}>No signals</div>
-          ) : topSignals.map((sig, i) => (
-            <Tooltip key={i} text={
-              sig.text === "Vila Window" ? "End-of-half pressure spike. Goal probability historically +35% in minutes 35–45 & 80–93." :
-              sig.text === "Red Card" ? "Numerical advantage — team with extra player has statistically 55% higher goal rate (Bivariate Poisson research)." :
-              sig.text === "Late Draw" ? "Draw after 60′ — both teams desperate for winner. Attack rate increases significantly." :
-              sig.text.includes("pressing") ? `${sig.text} — dominant possession above 65% with high attack rate. Next goal more likely for this team.` :
-              sig.text === "High Scoring" ? "3+ goals already — open game with both defences exposed. Over 0.5 is high confidence." :
-              sig.text === "1 Goal Late" ? "1-goal difference after 70′ — trailing team pushes hard, higher goal rate than average." :
-              sig.text === "High Attacks" ? "Dangerous attack rate above 1.5/min — sustained pressure likely to produce a chance." :
-              `Bet signal: ${sig.bet}`
-            }>
-              <div style={{ display: "flex", flexDirection: "column", background: `${sig.color}0d`, border: `1px solid ${sig.color}33`, borderRadius: 4, padding: "4px 7px" }}>
-                <div style={{ fontSize: 13, color: sig.color, fontWeight: 700 }}>{sig.icon} {sig.text}</div>
-                <div style={{ fontSize: 12, color: "#555", fontWeight: 600 }}>→ {sig.bet}</div>
-              </div>
-            </Tooltip>
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div style={{ width: 1, alignSelf: "stretch", background: "#f0f0f0", flexShrink: 0 }} />
-
-        {/* Goal Probability — col 3 */}
-        {(() => {
-          const gp = calcGoalProb(m);
-          const bars = [1,2,3,4,5,6,7,8,9,10];
-          return (
-            <div style={{ width: 90, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, paddingTop: 2 }}>
-              {/* Score display */}
-              <Tooltip text={
-                gp.score === 0 ? "Not started — no prediction yet" :
-                `Goal Probability: ${gp.probPct}% chance of a goal in the next ${gp.timeLeft}′. Based on Poisson model using possession, shots, attacks, red cards & motivation multiplier. Bet: ${gp.bet}`
-              }>
-                <div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: gp.color, fontFamily: "monospace", lineHeight: 1.3, textAlign: "center" }}>
-                    {gp.score > 0 ? gp.score.toFixed(1) : "—"}
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: gp.color, letterSpacing: "0.04em", textAlign: "center" }}>{gp.label}</div>
-                </div>
-              </Tooltip>
-              {/* Bar chart */}
-              <div style={{ display: "flex", gap: 1.5, alignItems: "flex-end", height: 18, marginTop: 2 }}>
-                {bars.map(b => (
-                  <div key={b} style={{
-                    width: 4, borderRadius: 1,
-                    height: `${(b / 10) * 18}px`,
-                    background: b <= gp.rounded ? gp.color : "#f0f0f0",
-                    transition: "background .3s",
-                  }} />
-                ))}
-              </div>
-              {/* Probability % */}
-              {gp.probPct > 0 && (
-                <div style={{ fontSize: 12, color: gp.color, fontWeight: 700, fontFamily: "monospace" }}>
-                  {gp.probPct}%
-                </div>
-              )}
-              {/* Best bet */}
-              {gp.bet && gp.rounded >= 5 && (
-                <div style={{ fontSize: 12, color: "#555", textAlign: "center", lineHeight: 1.5, maxWidth: 66 }}>
-                  {gp.bet}
-                </div>
-              )}
-              {/* Time label */}
-              {gp.timeLeft > 0 && (
-                <div style={{ fontSize: 12, color: "#555", fontFamily: "monospace" }}>
-                  {gp.timeLeft}′ to {gp.halfLabel}
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
-        {/* Divider */}
-        <div style={{ width: 1, alignSelf: "stretch", background: "#f0f0f0", flexShrink: 0 }} />
-
-        {/* Heat + star + FD — col 4 */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: "50%",
-            border: `2.5px solid ${color}`,
-            background: `${color}12`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color, fontFamily: "monospace" }}>{s}</span>
-          </div>
-          <Tooltip text={isFav ? "Remove from watchlist" : "Add to watchlist — groups this game at the top"}>
-            <button onClick={e => { e.stopPropagation(); onFavToggle(m.fixture_id); }} style={{
-              background: "none", border: "none", cursor: "pointer",
-              fontSize: 18, color: isFav ? "#f9a825" : "#ccc",
-              padding: 0, lineHeight: 1.3,
-            }}>★</button>
-          </Tooltip>
-          <Tooltip text={isFanduel ? "Tagged as available on FanDuel — tap to untag" : "Tap to mark this game as live on FanDuel. It will move to your FanDuel Live group."}>
-            <button onClick={e => { e.stopPropagation(); onFanduelToggle && onFanduelToggle(m.fixture_id); }} style={{
-              background: isFanduel ? "#e8f5e9" : "none",
-              border: isFanduel ? "1.5px solid #a5d6a7" : "1.5px solid #e0e0e0",
-              borderRadius: 4, cursor: "pointer",
-              fontSize: 12, fontWeight: 700,
-              color: isFanduel ? "#2e7d32" : "#ccc",
-              padding: "2px 4px", lineHeight: 1.5,
-            }}>FD</button>
-          </Tooltip>
-        </div>
-      </div>
-
-      {/* ── MOTIVATION — simple visible row ── */}
-      {m.status !== "NS" && m.status !== "FT" && (() => {
-        const getLabel = (goals, opp, minute, mot) => {
-          const late = minute >= 70, veryLate = minute >= 80;
-          const trailing = goals < opp, leading = goals > opp, drawing = goals === opp;
-          if (mot?.tag) return { text: mot.tag.text, color: mot.tag.color };
-          if (trailing && veryLate) return { text: "🚨 MUST WIN", color: "#c62828" };
-          if (trailing && late)     return { text: "⚡ MUST SCORE", color: "#e53935" };
-          if (trailing)             return { text: "⚡ Chasing", color: "#f57c00" };
-          if (leading && veryLate)  return { text: "🛡️ SAFE", color: "#2e7d32" };
-          if (leading)              return { text: "🛡️ Protecting", color: "#388e3c" };
-          if (drawing && veryLate)  return { text: "🔥 MUST SCORE", color: "#6a1b9a" };
-          if (drawing && late)      return { text: "⚡ Pushing", color: "#f57c00" };
-          return { text: "In play", color: "#777" };
-        };
-        const hLabel = getLabel(m.home.goals, m.away.goals, m.minute, m.home.motivation);
-        const aLabel = getLabel(m.away.goals, m.home.goals, m.minute, m.away.motivation);
-        const hScore = Math.min(10, Math.max(1, m.home.motivation?.score ??
-          (m.home.goals < m.away.goals ? (m.minute >= 80 ? 9.5 : 7) : m.home.goals > m.away.goals ? (m.minute >= 80 ? 3 : 5) : (m.minute >= 80 ? 8.5 : 5.5))));
-        const aScore = Math.min(10, Math.max(1, m.away.motivation?.score ??
-          (m.away.goals < m.home.goals ? (m.minute >= 80 ? 9.5 : 7) : m.away.goals > m.home.goals ? (m.minute >= 80 ? 3 : 5) : (m.minute >= 80 ? 8.5 : 5.5))));
-        const hColor = hScore >= 8 ? "#d32f2f" : hScore >= 6 ? "#e65100" : hScore >= 5 ? "#1565c0" : "#757575";
-        const aColor = aScore >= 8 ? "#d32f2f" : aScore >= 6 ? "#e65100" : aScore >= 5 ? "#1565c0" : "#757575";
-        return (
-          <div style={{ margin: "2px 14px 10px", padding: "8px 10px", background: "#f8f8f8", borderRadius: 8, border: "1.5px solid #eee" }}>
-            <div style={{ fontSize: 13, color: "#555", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 6 }}>🧠 MOTIVATION</div>
+          {/* Teams & Score — takes all remaining space */}
+          <div style={{ flex: 1, minWidth: 0 }}>
             {/* Home */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
-              <span style={{ fontSize: 14, color: "#666", width: 85, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.home.name}</span>
-              <div style={{ flex: 1, height: 10, background: "#ddd", borderRadius: 4, overflow: "hidden" }}>
-                <div style={{ width: `${Math.round((hScore/10)*100)}%`, height: "100%", background: hColor, borderRadius: 4 }} />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1 }}>
+                {m.home.logo && <img src={m.home.logo} width="18" height="18" style={{ borderRadius: 3, flexShrink: 0 }} alt="" onError={e => e.target.style.display="none"} />}
+                <span style={{ fontSize: 16, fontWeight: homeWin ? 700 : 500, color: homeWin ? "#111" : "#444", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {m.home.name}
+                </span>
+                {m.home.red_cards > 0 && <span style={{ fontSize: 11, background: "#e53935", color: "#fff", borderRadius: 3, padding: "1px 5px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
               </div>
-              <span style={{ fontSize: 14, fontWeight: 800, color: hColor, width: 16, textAlign: "right", fontFamily: "monospace" }}>{Math.round(hScore)}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: hLabel.color, background: hLabel.color + "18", border: "1.5px solid " + hLabel.color + "55", borderRadius: 8, padding: "4px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>{hLabel.text}</span>
+              <span style={{ fontSize: 22, fontWeight: 800, color: "#111", fontFamily: "monospace", marginLeft: 8, flexShrink: 0 }}>{m.home.goals ?? "-"}</span>
             </div>
             {/* Away */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 14, color: "#666", width: 85, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.away.name}</span>
-              <div style={{ flex: 1, height: 10, background: "#ddd", borderRadius: 4, overflow: "hidden" }}>
-                <div style={{ width: `${Math.round((aScore/10)*100)}%`, height: "100%", background: aColor, borderRadius: 4 }} />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1 }}>
+                {m.away.logo && <img src={m.away.logo} width="18" height="18" style={{ borderRadius: 3, flexShrink: 0 }} alt="" onError={e => e.target.style.display="none"} />}
+                <span style={{ fontSize: 16, fontWeight: awayWin ? 700 : 500, color: awayWin ? "#111" : "#444", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {m.away.name}
+                </span>
+                {m.away.red_cards > 0 && <span style={{ fontSize: 11, background: "#e53935", color: "#fff", borderRadius: 3, padding: "1px 5px", flexShrink: 0, fontWeight: 700 }}>RC</span>}
               </div>
-              <span style={{ fontSize: 14, fontWeight: 800, color: aColor, width: 16, textAlign: "right", fontFamily: "monospace" }}>{Math.round(aScore)}</span>
-              <Tooltip text={
-                aLabel.text.includes("MUST WIN") ? "Trailing late — maximum attacking urgency. Research shows goal rate 1.8× above average (Dixon & Robinson 1998)." :
-                aLabel.text.includes("MUST SCORE") ? "Trailing or drawing late — strong attacking push. Goal rate elevated by motivation multiplier." :
-                aLabel.text.includes("SAFE") ? "Leading comfortably — team likely sitting back. Low attacking intent expected." :
-                aLabel.text.includes("Protecting") ? "Leading — conserving energy. Goal rate reduced by ~15–40% (Caley 2025)." :
-                aLabel.text.includes("Pushing") ? "Drawing — both teams want the win. Elevated goal rate from double urgency." :
-                aLabel.text.includes("Title") ? "In a title race — maximum motivation. Every point counts." :
-                aLabel.text.includes("Relegation") ? "Fighting relegation — desperation level motivation. 10/10 urgency regardless of score." :
-                aLabel.text.includes("CL") ? "Fighting for Champions League spot — high stakes, high effort." :
-                aLabel.text.includes("Nothing") ? "Nothing at stake — research shows 20% lower defensive intensity. More open game." :
-                "Motivation level based on league standing and match state"
-              }>
-                <span style={{ fontSize: 13, fontWeight: 700, color: aLabel.color, background: aLabel.color + "18", border: "1.5px solid " + aLabel.color + "55", borderRadius: 8, padding: "4px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>{aLabel.text}</span>
-              </Tooltip>
+              <span style={{ fontSize: 22, fontWeight: 800, color: "#111", fontFamily: "monospace", marginLeft: 8, flexShrink: 0 }}>{m.away.goals ?? "-"}</span>
             </div>
           </div>
-        );
-      })()}
 
+          {/* Heat ring + star + FD */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
+            <Tooltip text={`Heat Score ${s}/100`}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", border: `2.5px solid ${color}`, background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 14, fontWeight: 800, color, fontFamily: "monospace" }}>{s}</span>
+              </div>
+            </Tooltip>
+            <Tooltip text={isFav ? "Remove from watchlist" : "Add to watchlist"}>
+              <button onClick={e => { e.stopPropagation(); onFavToggle(m.fixture_id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: isFav ? "#f9a825" : "#ddd", padding: 0, lineHeight: 1 }}>★</button>
+            </Tooltip>
+            <Tooltip text={isFanduel ? "Unmark FanDuel" : "Mark as live on FanDuel"}>
+              <button onClick={e => { e.stopPropagation(); onFanduelToggle && onFanduelToggle(m.fixture_id); }} style={{ background: isFanduel ? "#e8f5e9" : "#f5f5f5", border: `1px solid ${isFanduel ? "#a5d6a7" : "#e0e0e0"}`, borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: 700, color: isFanduel ? "#2e7d32" : "#aaa", padding: "2px 5px" }}>FD</button>
+            </Tooltip>
+          </div>
+        </div>
+
+        {/* ROW 2: Signals | Goal Probability */}
+        {m.status !== "NS" && m.status !== "FT" && (
+          <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+
+            {/* Signals */}
+            <div style={{ flex: 1, display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {topSignals.length === 0
+                ? <span style={{ fontSize: 13, color: "#bbb", fontStyle: "italic" }}>No signals</span>
+                : topSignals.map((sig, i) => (
+                  <div key={i} style={{ background: `${sig.color}12`, border: `1.5px solid ${sig.color}44`, borderRadius: 6, padding: "4px 8px" }}>
+                    <div style={{ fontSize: 13, color: sig.color, fontWeight: 700, whiteSpace: "nowrap" }}>{sig.icon} {sig.text}</div>
+                    <div style={{ fontSize: 12, color: "#666", fontWeight: 600 }}>→ {sig.bet}</div>
+                  </div>
+                ))
+              }
+            </div>
+
+            {/* Goal Probability */}
+            {(() => {
+              const gp = calcGoalProb(m);
+              const bars = [1,2,3,4,5,6,7,8,9,10];
+              return (
+                <div style={{ flexShrink: 0, textAlign: "center", minWidth: 70 }}>
+                  <Tooltip text={gp.score > 0 ? `${gp.probPct}% chance of a goal in next ${gp.timeLeft}′. Bet: ${gp.bet}` : "Not started"}>
+                    <div>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: gp.color, fontFamily: "monospace", lineHeight: 1 }}>
+                        {gp.score > 0 ? gp.score.toFixed(1) : "—"}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: gp.color }}>{gp.label}</div>
+                      <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 16, justifyContent: "center", marginTop: 3 }}>
+                        {bars.map(b => (
+                          <div key={b} style={{ width: 4, borderRadius: 1, height: `${(b/10)*16}px`, background: b <= Math.round(gp.score) ? gp.color : "#eee" }} />
+                        ))}
+                      </div>
+                      {gp.probPct > 0 && (
+                        <div style={{ fontSize: 13, fontWeight: 800, color: gp.color, marginTop: 2 }}>{gp.probPct}%</div>
+                      )}
+                      {gp.bet && Math.round(gp.score) >= 5 && (
+                        <div style={{ fontSize: 11, color: "#666", marginTop: 1, lineHeight: 1.3 }}>{gp.bet}</div>
+                      )}
+                      {gp.timeLeft > 0 && (
+                        <div style={{ fontSize: 11, color: "#aaa", fontFamily: "monospace" }}>{gp.timeLeft}′ to {gp.halfLabel}</div>
+                      )}
+                    </div>
+                  </Tooltip>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+      </div>
       {expanded && <MatchDetail m={m} />}
     </div>
   );
@@ -1212,4 +1075,3 @@ export default function App() {
     </div>
   );
 }
-
