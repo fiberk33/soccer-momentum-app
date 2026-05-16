@@ -847,7 +847,11 @@ export default function App() {
   else if (filter === "HIGH") displayed = displayed.filter(m => m.heat_score >= 60 && m.heat_score < 80);
   else if (filter === "OTHER") displayed = displayed.filter(m => m.heat_score < 60);
 
-  const groups = groupByLeague(displayed);
+  // Exclude favourited games from league groups (they show in watchlist already)
+  const leagueDisplayed = favourites.size > 0
+    ? displayed.filter(m => !favourites.has(m.fixture_id))
+    : displayed;
+  const groups = groupByLeague(leagueDisplayed);
   const extremeCount = matches.filter(m => m.heat_score >= 80).length;
 
   return (
