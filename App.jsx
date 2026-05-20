@@ -436,6 +436,125 @@ function calcHalfTimeScore(m) {
   };
 }
 
+// ─── DEAD GAME DETECTOR ──────────────────────────────────────────────────────
+// Identifies low-intensity 0-0 / low-scoring games not worth betting on.
+//
+// Research basis:
+// - PerformanceOdds (2026): EPI > 6.5 = 75%+ chance of 1H goal
+//   EPI = (SOT × xG_proxy) + (corners × 0.2) − (fouls × 0.1)
+// - 20bet research (2025): 0-0 with <8 combined SOT = dead game signal
+// - xGscore (2025): Low xG on both sides = structural goalless tendency
+// - BBC/Opta: Total match xG < 0.5 = statistically dead game
+
+function calcDeadGame(m) {
+  if (m.status === "NS" || m.status === "FT" || m.status === "HT") return null;
+
+  const minute = m.minute;
+  if (minute < 15) return null; // too early to judge
+
+  const homeGoals = m.home.goals || 0;
+  const awayGoals = m.away.goals || 0;
+  const totalGoals = homeGoals + awayGoals;
+
+  // Only relevant for 0-0 or 1-0 low-action games
+  if (totalGoals >= 2) return null; // already scoring — not a dead game
+
+  const totalSOT   = (m.home.shots_on_target || 0) + (m.away.shots_on_target || 0);
+  const totalDA    = (m.home.dangerous_attacks || 0) + (m.away.dangerous_attacks || 0);
+  const totalCorners = (m.home.corners || 0) + (m.away.corners || 0);
+  const hasStats   = totalSOT > 0 || totalDA > 0;
+
+  if (!hasStats) return null; // can't judge without stats
+
+  // ── EARLY PRESSURE INDEX (PerformanceOdds 2026) ───────────────────────────
+  // EPI = (SOT × xG_proxy) + (corners × 0.2)
+  // xG proxy: SOT rate per 90 min
+  const sotPer90 = (totalSOT / Math.max(minute, 1)) * 90;
+  const xgProxy  = Math.min(3.0, sotPer90 * 0.15); // rough xG estimate
+  const epi = (totalSOT * xgProxy) + (totalCorners * 0.2);
+
+  // ── ATTACK INTENSITY RATE ─────────────────────────────────────────────────
+  const daPer90 = (totalDA / Math.max(minute, 1)) * 90;
+  const sotRate = sotPer90;
+
+  // ── DEAD GAME THRESHOLDS ──────────────────────────────────────────────────
+  const deadSignals = [];
+  let deadScore = 0; // 0=live, 10=definitely dead
+
+  // Signal 1: Very low SOT (BBC/Opta: <8 combined = dead)
+  if (totalSOT === 0 && minute >= 30) {
+    deadScore += 4;
+    deadSignals.push(`Zero shots on target at ${minute}′`);
+  } else if (sotRate < 2 && minute >= 25) {
+    deadScore += 3;
+    deadSignals.push(`Very low shot rate: ${sotRate.toFixed(1)}/90`);
+  } else if (sotRate < 4 && minute >= 20) {
+    deadScore += 1.5;
+    deadSignals.push(`Low shot rate: ${sotRate.toFixed(1)}/90`);
+  }
+
+  // Signal 2: Low EPI (PerformanceOdds threshold)
+  if (epi < 1.5 && minute >= 20) {
+    deadScore += 3;
+    deadSignals.push(`Low pressure index: EPI ${epi.toFixed(1)} (need >6.5)`);
+  } else if (epi < 3.5) {
+    deadScore += 1.5;
+    deadSignals.push(`Below average pressure: EPI ${epi.toFixed(1)}`);
+  }
+
+  // Signal 3: Low dangerous attack rate
+  if (daPer90 < 15 && minute >= 20) {
+    deadScore += 2;
+    deadSignals.push(`Very low attack volume: ${daPer90.toFixed(0)}/90`);
+  } else if (daPer90 < 25) {
+    deadScore += 1;
+  }
+
+  // Signal 4: Low corners (territorial control indicator)
+  const cornersPer90 = (totalCorners / Math.max(minute, 1)) * 90;
+  if (cornersPer90 < 3 && minute >= 25) {
+    deadScore += 1.5;
+    deadSignals.push(`No box pressure: ${cornersPer90.toFixed(1)} corners/90`);
+  }
+
+  // Signal 5: Balanced but inactive possession
+  const possBalance = Math.abs((m.home.possession || 50) - (m.away.possession || 50));
+  if (possBalance < 8 && totalSOT <= 2 && minute >= 25) {
+    deadScore += 1.5;
+    deadSignals.push(`Balanced but passive: ${possBalance}% poss gap, only ${totalSOT} SOT`);
+  }
+
+  // Bonus: 0-0 at 60+ with low activity = very strong dead signal
+  if (totalGoals === 0 && minute >= 60 && deadScore >= 4) {
+    deadScore += 2;
+    deadSignals.push(`0-0 at ${minute}′ with low activity — structural stalemate`);
+  }
+
+  // Clamp
+  deadScore = Math.min(10, Math.max(0, deadScore));
+
+  // Only return if meaningful signal
+  if (deadScore < 3) return null;
+
+  const isDead = deadScore >= 6;
+  const isSuspect = deadScore >= 3 && deadScore < 6;
+
+  return {
+    deadScore,
+    isDead,
+    isSuspect,
+    signals: deadSignals,
+    epi: Math.round(epi * 10) / 10,
+    sotRate: Math.round(sotRate * 10) / 10,
+    verdict: isDead
+      ? "⛔ SKIP — Dead game, very unlikely to score"
+      : "⚠️ LOW ACTIVITY — Bet with caution",
+    color: isDead ? "#c62828" : "#e65100",
+    bg: isDead ? "#ffebee" : "#fff8e1",
+    border: isDead ? "#ef9a9a" : "#ffe082",
+  };
+}
+
 // ─── SCIENTIFIC GOAL PROBABILITY ENGINE ──────────────────────────────────────
 // Based on:
 // - Dixon & Robinson (1998): Doubly stochastic Poisson process — goal rate
@@ -770,6 +889,32 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
           </div>
         </div>
 
+        {/* DEAD GAME DETECTOR */}
+        {m.status !== "NS" && m.status !== "FT" && (() => {
+          const dg = calcDeadGame(m);
+          if (!dg) return null;
+          return (
+            <div style={{ marginBottom: 8, padding: "8px 12px", background: dg.bg, border: `1.5px solid ${dg.border}`, borderRadius: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <span style={{ fontSize: 14, fontWeight: 800, color: dg.color }}>{dg.verdict}</span>
+                <span style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700, color: dg.color, background: dg.isDead ? "#ffcdd2" : "#ffe082", borderRadius: 4, padding: "2px 7px" }}>
+                  Dead: {dg.deadScore}/10
+                </span>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                {dg.signals.map((s, i) => (
+                  <span key={i} style={{ fontSize: 11, color: dg.color, background: dg.isDead ? "#ffcdd2" : "#fff9c4", borderRadius: 10, padding: "2px 8px" }}>
+                    {s}
+                  </span>
+                ))}
+              </div>
+              <div style={{ fontSize: 11, color: dg.color, marginTop: 5, opacity: 0.8 }}>
+                EPI: {dg.epi} (need &gt;6.5 to trust) · Shot rate: {dg.sotRate}/90
+              </div>
+            </div>
+          );
+        })()}
+
         {/* CONFIDENCE INDICATOR */}
         {m.status !== "NS" && m.status !== "FT" && (() => {
           const gp = calcGoalProb(m);
@@ -778,14 +923,19 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
           const heatMed  = m.heat_score >= 35;
           const probMed  = gp.rounded >= 4;
 
+          // Check for dead game first
+          const dgCheck = calcDeadGame(m);
           let conf = null;
-          if (heatHigh && probHigh) {
+          if (dgCheck?.isDead) {
+            // Dead game overrides all — never show HIGH CONFIDENCE on a dead game
+            conf = null; // dead game banner already shown above
+          } else if (heatHigh && probHigh && !dgCheck) {
             conf = { label: "⚡ HIGH CONFIDENCE BET", sublabel: `Heat ${m.heat_score} + ${gp.probPct}% goal chance — both signals aligned`, bg: "#e8f5e9", border: "#43a047", color: "#1b5e20", dot: "#43a047" };
-          } else if (!heatHigh && probHigh) {
+          } else if (!heatHigh && probHigh && !dgCheck) {
             conf = { label: "🟡 MODERATE — Score-Driven", sublabel: `Goal prob ${gp.probPct}% from score state, not pressure. Verify on FanDuel.`, bg: "#fffde7", border: "#f9a825", color: "#e65100", dot: "#f9a825" };
           } else if (heatHigh && !probHigh) {
             conf = { label: "⚪ PRESSURE — LOW CHANCE", sublabel: `Heat ${m.heat_score} but only ${gp.probPct}% goal prob. Game may be decided.`, bg: "#f5f5f5", border: "#bbb", color: "#666", dot: "#bbb" };
-          } else if (heatMed && probMed) {
+          } else if (heatMed && probMed && !dgCheck?.isSuspect) {
             conf = { label: "👀 WATCH", sublabel: `Building — Heat ${m.heat_score}, ${gp.probPct}% chance. Not ready yet.`, bg: "#fff8f0", border: "#ffcc80", color: "#e65100", dot: "#ffcc80" };
           }
 
