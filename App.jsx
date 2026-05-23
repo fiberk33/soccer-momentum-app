@@ -1273,18 +1273,17 @@ export default function App() {
   else if (filter === "HIGH") displayed = displayed.filter(m => m.heat_score >= 60 && m.heat_score < 80);
   else if (filter === "OTHER") displayed = displayed.filter(m => m.heat_score < 60);
 
-  // Search filter
-  const searchFiltered = searchQuery.trim()
-    ? matches.filter(m => {
-        const q = searchQuery.toLowerCase();
-        return (
-          m.home.name.toLowerCase().includes(q) ||
-          m.away.name.toLowerCase().includes(q) ||
-          m.league.toLowerCase().includes(q) ||
-          m.country.toLowerCase().includes(q)
-        );
-      })
-    : matches;
+  // Search filter — wired into displayed pipeline
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase();
+    displayed = displayed.filter(m =>
+      m.home.name.toLowerCase().includes(q) ||
+      m.away.name.toLowerCase().includes(q) ||
+      m.league.toLowerCase().includes(q) ||
+      m.country.toLowerCase().includes(q)
+    );
+  }
+  const searchFiltered = displayed; // alias for result count
 
   // Filter out hidden leagues
   const filteredDisplayed = displayed.filter(m => !hiddenLeagues.has(`${m.country} — ${m.league}`));
