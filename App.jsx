@@ -883,9 +883,7 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
             <Tooltip text={isFav ? "Remove from watchlist" : "Add to watchlist"}>
               <button onClick={e => { e.stopPropagation(); onFavToggle(m.fixture_id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: isFav ? "#f9a825" : "#ddd", padding: 0, lineHeight: 1 }}>★</button>
             </Tooltip>
-            <Tooltip text={isFanduel ? "Unmark FanDuel" : "Mark as live on FanDuel"}>
-              <button onClick={e => { e.stopPropagation(); onFanduelToggle && onFanduelToggle(m.fixture_id); }} style={{ background: isFanduel ? "#e8f5e9" : "#f5f5f5", border: `1px solid ${isFanduel ? "#a5d6a7" : "#e0e0e0"}`, borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: 700, color: isFanduel ? "#2e7d32" : "#aaa", padding: "2px 5px" }}>FD</button>
-            </Tooltip>
+
           </div>
         </div>
 
@@ -1132,13 +1130,10 @@ export default function App() {
     } catch { return new Set(); }
   });
   const [showFavsOnly, setShowFavsOnly] = useState(false);
-  const [fanduelGames, setFanduelGames] = useState(() => {
-    try {
-      const saved = localStorage.getItem('mt_fanduel');
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch { return new Set(); }
-  });
-  const [showFanduelOnly, setShowFanduelOnly] = useState(false);
+  const [fanduelGames, setFanduelGames] = useState(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+
   const [alertThreshold, setAlertThreshold] = useState(() => {
     try { return parseInt(localStorage.getItem('mt_threshold') || '80'); }
     catch { return 80; }
@@ -1273,10 +1268,23 @@ export default function App() {
   let displayed = [...matches];
   if (filterLive) displayed = displayed.filter(m => m.status !== "NS" && m.status !== "FT");
   if (showFavsOnly) displayed = displayed.filter(m => favourites.has(m.fixture_id));
-  if (showFanduelOnly) displayed = displayed.filter(m => fanduelGames.has(m.fixture_id));
+
   if (filter === "EXTREME") displayed = displayed.filter(m => m.heat_score >= 80);
   else if (filter === "HIGH") displayed = displayed.filter(m => m.heat_score >= 60 && m.heat_score < 80);
   else if (filter === "OTHER") displayed = displayed.filter(m => m.heat_score < 60);
+
+  // Search filter
+  const searchFiltered = searchQuery.trim()
+    ? matches.filter(m => {
+        const q = searchQuery.toLowerCase();
+        return (
+          m.home.name.toLowerCase().includes(q) ||
+          m.away.name.toLowerCase().includes(q) ||
+          m.league.toLowerCase().includes(q) ||
+          m.country.toLowerCase().includes(q)
+        );
+      })
+    : matches;
 
   // Filter out hidden leagues
   const filteredDisplayed = displayed.filter(m => !hiddenLeagues.has(`${m.country} — ${m.league}`));
@@ -1333,9 +1341,29 @@ export default function App() {
             <button onClick={() => setShowFavsOnly(f => !f)} style={{ flex: 1, background: showFavsOnly ? "#fff8e1" : "#fafafa", border: `1px solid ${showFavsOnly ? "#f9a82566" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 6px", cursor: "pointer", fontSize: 13, fontWeight: 700, color: showFavsOnly ? "#f9a825" : "#777", textAlign: "center" }}>
               ★ Watchlist{favourites.size > 0 ? ` (${favourites.size})` : ""}
             </button>
-            <button onClick={() => setShowFanduelOnly(f => !f)} style={{ flex: 1, background: showFanduelOnly ? "#e8f5e9" : "#fafafa", border: `1px solid ${showFanduelOnly ? "#43a04766" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 6px", cursor: "pointer", fontSize: 13, fontWeight: 700, color: showFanduelOnly ? "#2e7d32" : "#777", textAlign: "center" }}>
-              🟢 FanDuel{fanduelGames.size > 0 ? ` (${fanduelGames.size})` : ""}
-            </button>
+            {/* Search bar */}
+            <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center" }}>
+              <span style={{ position: "absolute", left: 10, fontSize: 14, color: "#aaa", pointerEvents: "none" }}>🔍</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                placeholder="Search team or league..."
+                style={{
+                  width: "100%", padding: "8px 32px 8px 32px",
+                  border: `1.5px solid ${searchFocused ? "#1565c0" : "#e0e0e0"}`,
+                  borderRadius: 8, fontSize: 13, color: "#333",
+                  background: "#fff", outline: "none",
+                  boxSizing: "border-box",
+                  transition: "border-color .2s",
+                }}
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} style={{ position: "absolute", right: 8, background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#aaa", padding: 0, lineHeight: 1 }}>✕</button>
+              )}
+            </div>
             <button onClick={() => setSoundEnabled(s => {
               const next = !s;
               try { localStorage.setItem('mt_sound', String(next)); } catch {}
@@ -1411,6 +1439,16 @@ export default function App() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Search results summary */}
+      {searchQuery.trim() && (
+        <div style={{ padding: "8px 14px", background: "#e3f2fd", borderBottom: "1px solid #bbdefb", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 13, color: "#1565c0", fontWeight: 600 }}>
+            🔍 "{searchQuery}" — {searchFiltered.length} result{searchFiltered.length !== 1 ? "s" : ""}
+          </span>
+          <button onClick={() => setSearchQuery('')} style={{ fontSize: 12, color: "#1565c0", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>Clear</button>
         </div>
       )}
 
