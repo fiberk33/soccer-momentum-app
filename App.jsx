@@ -875,9 +875,17 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
 
           {/* Heat ring + star + FD */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flexShrink: 0 }}>
-            <Tooltip text={`Heat Score ${s}/100`}>
-              <div style={{ width: 44, height: 44, borderRadius: "50%", border: `2.5px solid ${color}`, background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 14, fontWeight: 800, color, fontFamily: "monospace" }}>{s}</span>
+            <Tooltip text={`Heat Score ${s}/100 — Trend: ${m.momentum?.trend || "neutral"} (${m.momentum?.delta > 0 ? "+" : ""}${m.momentum?.delta || 0}). ${m.momentum?.rising ? "Rising momentum — stronger signal." : m.momentum?.trend === "falling" ? "Falling — wait before betting." : "Stable pressure."}`}>
+              <div style={{ position: "relative" }}>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", border: `2.5px solid ${color}`, background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: 14, fontWeight: 800, color, fontFamily: "monospace" }}>{s}</span>
+                </div>
+                {m.momentum?.trend === "rising" && (
+                  <span style={{ position: "absolute", top: -4, right: -4, fontSize: 11, background: "#43a047", color: "#fff", borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>↑</span>
+                )}
+                {m.momentum?.trend === "falling" && (
+                  <span style={{ position: "absolute", top: -4, right: -4, fontSize: 11, background: "#e53935", color: "#fff", borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>↓</span>
+                )}
               </div>
             </Tooltip>
             <Tooltip text={isFav ? "Remove from watchlist" : "Add to watchlist"}>
@@ -1174,6 +1182,11 @@ export default function App() {
             return { ...m, timeline };
           }).sort((a, b) => b.heat_score - a.heat_score)
         );
+        // Adaptive polling — use server recommendation
+        if (json.recommended_poll_seconds) {
+          setCountdown(json.recommended_poll_seconds);
+          return; // skip the default setCountdown below
+        }
       }
     } catch {
       setIsDemo(true);
