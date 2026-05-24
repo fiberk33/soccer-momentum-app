@@ -430,8 +430,35 @@ export default async function handler(req, res) {
       if (r.status!=="fulfilled") return;
       const {lid,standings} = r.value;
       leagueSizeMap[lid]=standings.length;
+
+      // Compute league averages for attack/defence strength (Poisson model)
+      const totalTeams = standings.length || 1;
+      const leagueGoalsFor  = standings.reduce((s,t) => s+(t.all?.goals?.for||0), 0);
+      const leagueGoalsAg   = standings.reduce((s,t) => s+(t.all?.goals?.against||0), 0);
+      const leagueGamesPlay = standings.reduce((s,t) => s+(t.all?.played||0), 0) || totalTeams;
+      const leagueAvgFor  = leagueGoalsFor  / leagueGamesPlay;  // avg goals scored/game
+      const leagueAvgAg   = leagueGoalsAg   / leagueGamesPlay;  // avg goals conceded/game
+
       standings.forEach(s => {
-        teamStandingMap[s.team.id]={rank:s.rank,points:s.points,points_to_leader:(standings[0]?.points||0)-s.points,leagueId:lid};
+        const played  = s.all?.played || 1;
+        const gFor    = s.all?.goals?.for || 0;
+        const gAg     = s.all?.goals?.against || 0;
+        // Attack strength = team avg goals scored / league avg goals scored
+        const atkStr  = leagueAvgFor  > 0 ? (gFor/played) / leagueAvgFor  : 1;
+        // Defence strength = team avg goals conceded / league avg goals conceded
+        // Lower = better defence
+        const defStr  = leagueAvgAg   > 0 ? (gAg/played) / leagueAvgAg   : 1;
+
+        teamStandingMap[s.team.id]={
+          rank:s.rank, points:s.points,
+          points_to_leader:(standings[0]?.points||0)-s.points,
+          leagueId:lid,
+          // Poisson strength ratings
+          attack_strength: Math.round(atkStr*100)/100,
+          defence_strength: Math.round(defStr*100)/100,
+          goals_for_pg: Math.round(gFor/played*100)/100,
+          goals_ag_pg: Math.round(gAg/played*100)/100,
+        };
       });
     });
 
@@ -484,6 +511,13 @@ export default async function handler(req, res) {
 
       const homeMot=computeMotivationIndex(teamStandingMap[homeId],leagueSize)||computeMatchStateMot(fx.goals.home??0,fx.goals.away??0,minute);
       const awayMot=computeMotivationIndex(teamStandingMap[awayId],leagueSize)||computeMatchStateMot(fx.goals.away??0,fx.goals.home??0,minute);
+      const homeStr=teamStandingMap[homeId]||null;
+      const awayStr=teamStandingMap[awayId]||null;
+      // Poisson expected goals for remaining time
+      const timeLeft=minute<45?45-minute:90-minute;
+      const leagueHomeAvg=1.36, leagueAwayAvg=1.06;
+      const homeXg=homeStr&&awayStr ? homeStr.attack_strength*awayStr.defence_strength*leagueHomeAvg*(timeLeft/90) : null;
+      const awayXg=homeStr&&awayStr ? awayStr.attack_strength*homeStr.defence_strength*leagueAwayAvg*(timeLeft/90) : null;
 
       const home = {
         name:fx.teams.home.name, logo:fx.teams.home.logo||"", id:homeId,
@@ -573,6 +607,16 @@ export default async function handler(req, res) {
           confidence_boost: triggerValidation.confidenceBoost,
         },
         poll_interval: pollInterval,
+        poisson: homeXg !== null ? {
+          home_xg: Math.round(homeXg*100)/100,
+          away_xg: Math.round(awayXg*100)/100,
+          total_xg: Math.round((homeXg+awayXg)*100)/100,
+          prob_goal: Math.round((1-Math.exp(-(homeXg+awayXg)))*100),
+          home_attack: homeStr?.attack_strength,
+          home_defence: homeStr?.defence_strength,
+          away_attack: awayStr?.attack_strength,
+          away_defence: awayStr?.defence_strength,
+        } : null,
       };
     }).sort((a,b)=>b.heat_score-a.heat_score);
 
