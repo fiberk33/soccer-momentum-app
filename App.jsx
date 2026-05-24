@@ -1025,6 +1025,12 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                         {gp.score > 0 ? gp.score.toFixed(1) : "—"}
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 800, color: gp.color }}>{gp.label}</div>
+                      {/* Model vs Market */}
+                      {m.poisson && (
+                        <div style={{ marginTop: 3, fontSize: 11, color: "#888" }}>
+                          <span style={{ color: "#555", fontWeight: 600 }}>xG: {m.poisson.total_xg}</span>
+                        </div>
+                      )}
                       <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 16, justifyContent: "center", marginTop: 3 }}>
                         {bars.map(b => (
                           <div key={b} style={{ width: 4, borderRadius: 1, height: `${(b/10)*16}px`, background: b <= Math.round(gp.score) ? gp.color : "#eee" }} />
