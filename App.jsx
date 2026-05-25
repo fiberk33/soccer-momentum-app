@@ -1483,10 +1483,39 @@ function EVScanner({ match, onClose }) {
 
 export default function App() {
   const [filterLive, setFilterLive] = useState(false);
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [matches, setMatches] = useState(() => {
+    try {
+      const cached = localStorage.getItem('mt_matches_cache');
+      if (cached) {
+        const { data, ts } = JSON.parse(cached);
+        // Use cache if less than 10 minutes old
+        if (data && Date.now() - ts < 10 * 60 * 1000) return data;
+      }
+    } catch {}
+    return [];
+  });
+  const [loading, setLoading] = useState(() => {
+    // Don't show loading if we have fresh cache
+    try {
+      const cached = localStorage.getItem('mt_matches_cache');
+      if (cached) {
+        const { ts } = JSON.parse(cached);
+        if (Date.now() - ts < 10 * 60 * 1000) return false;
+      }
+    } catch {}
+    return true;
+  });
   const [error, setError] = useState(null);
-  const [isDemo, setIsDemo] = useState(false);
+  const [isDemo, setIsDemo] = useState(() => {
+    try {
+      const cached = localStorage.getItem('mt_matches_cache');
+      if (cached) {
+        const { data, ts } = JSON.parse(cached);
+        if (data && Date.now() - ts < 10 * 60 * 1000) return false;
+      }
+    } catch {}
+    return false;
+  });
   const [countdown, setCountdown] = useState(REFRESH);
   const [expanded, setExpanded] = useState(null);
   const [filter, setFilter] = useState("ALL");
@@ -1535,13 +1564,18 @@ export default function App() {
         setError("no_matches");
       } else {
         setIsDemo(false);
-        setMatches(prev =>
-          json.matches.map(m => {
-            const old = prev.find(p => p.fixture_id === m.fixture_id);
-            const timeline = old ? [...old.timeline, m.heat_score].slice(-20) : [m.heat_score];
-            return { ...m, timeline };
-          }).sort((a, b) => b.heat_score - a.heat_score)
-        );
+        const newMatches = json.matches.map(m => {
+          const old = matches.find(p => p.fixture_id === m.fixture_id);
+          const timeline = old ? [...(old.timeline||[]), m.heat_score].slice(-20) : [m.heat_score];
+          return { ...m, timeline };
+        }).sort((a, b) => b.heat_score - a.heat_score);
+        setMatches(newMatches);
+        // Cache to localStorage so app reopens instantly
+        try {
+          localStorage.setItem('mt_matches_cache', JSON.stringify({
+            data: newMatches, ts: Date.now()
+          }));
+        } catch {}
         // Adaptive polling — use server recommendation
         if (json.recommended_poll_seconds) {
           setCountdown(json.recommended_poll_seconds);
