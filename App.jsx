@@ -1709,10 +1709,7 @@ export default function App() {
               <button onClick={() => setFilterLive(false)} style={{ padding: "5px 10px", borderRadius: 18, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: !filterLive ? "#1565c0" : "transparent", color: !filterLive ? "#fff" : "#aaa" }}>ALL</button>
               <button onClick={() => setFilterLive(true)} style={{ padding: "5px 10px", borderRadius: 18, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: filterLive ? "#e53935" : "transparent", color: filterLive ? "#fff" : "#aaa" }}>● LIVE</button>
             </div>
-            {/* EV Scanner button */}
-            <button onClick={() => setEvMatch(evMatch ? null : {})} style={{ background: evMatch ? "#1565c0" : "#fafafa", border: `1px solid ${evMatch ? "#1565c0" : "#e0e0e0"}`, borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontSize: 12, fontWeight: 700, color: evMatch ? "#fff" : "#555", whiteSpace: "nowrap" }}>
-              📊 EV
-            </button>
+
             {/* Refresh */}
             <button onClick={load} style={{ background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 8, padding: "5px 8px", cursor: "pointer", fontSize: 13, fontFamily: "monospace", color: countdown < 10 ? "#f57c00" : "#aaa", display: "flex", alignItems: "center", gap: 3 }}>
               {loading ? <span style={{ display: "inline-block", width: 10, height: 10, border: "2px solid #e53935", borderTopColor: "transparent", borderRadius: "50%", animation: "spin .7s linear infinite" }} /> : "↻"} {countdown}s
@@ -1873,6 +1870,7 @@ export default function App() {
                     onFavToggle={toggleFav}
                     isFanduel={fanduelGames.has(m.fixture_id)}
                     onFanduelToggle={toggleFanduel}
+                    onEVOpen={setEvMatch}
                   />
                 ))}
               </div>
@@ -1906,6 +1904,7 @@ export default function App() {
                     onFavToggle={toggleFav}
                     isFanduel={true}
                     onFanduelToggle={toggleFanduel}
+                    onEVOpen={setEvMatch}
                   />
                 ))}
               </div>
