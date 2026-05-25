@@ -759,7 +759,7 @@ function calcGoalProb(m) {
 }
 
 // ─── MATCH ROW ────────────────────────────────────────────────────────────────
-function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFanduelToggle }) {
+function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFanduelToggle, onEVOpen }) {
   const s = m.heat_score;
   const color = heatColor(s);
   const isVila = (m.minute >= 35 && m.minute <= 45) || (m.minute >= 80 && m.minute <= 93);
@@ -1129,23 +1129,26 @@ function AlertPanel({ threshold, onChange, onClose }) {
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 // ─── EV SCANNER COMPONENT ────────────────────────────────────────────────────
-function EVScanner({ onClose }) {
+function EVScanner({ match, onClose }) {
   const [tab, setTab] = useState('poisson');
-  const [atkH, setAtkH] = useState(1.35);
-  const [defH, setDefH] = useState(0.88);
-  const [atkA, setAtkA] = useState(1.05);
-  const [defA, setDefA] = useState(1.12);
-  const [minEl, setMinEl] = useState(67);
-  const [gH, setGH] = useState(1);
-  const [gA, setGA] = useState(1);
+  const hasMatch = match && match.fixture_id;
+  const [atkH, setAtkH] = useState(match?.poisson?.home_attack || 1.35);
+  const [defH, setDefH] = useState(match?.poisson?.home_defence || 0.88);
+  const [atkA, setAtkA] = useState(match?.poisson?.away_attack || 1.05);
+  const [defA, setDefA] = useState(match?.poisson?.away_defence || 1.12);
+  const [minEl, setMinEl] = useState(match?.minute || 67);
+  const [gH, setGH] = useState(match?.home?.goals ?? 1);
+  const [gA, setGA] = useState(match?.away?.goals ?? 1);
   const [bkOdds, setBkOdds] = useState(1.85);
-  const [myProb, setMyProb] = useState(62);
+  const [myProb, setMyProb] = useState(match?.poisson?.prob_goal || 62);
   const [edgeThresh, setEdgeThresh] = useState(1.05);
   const [alerts, setAlerts] = useState(() => { try { return JSON.parse(localStorage.getItem('mt_bt')||'[]'); } catch { return []; } });
-  const [btMatch, setBtMatch] = useState('');
-  const [btMin, setBtMin] = useState(78);
-  const [btHeat, setBtHeat] = useState(74);
-  const [btProb, setBtProb] = useState(68);
+  const [btMatch, setBtMatch] = useState(
+    hasMatch ? `${match.home?.name} vs ${match.away?.name}` : ''
+  );
+  const [btMin, setBtMin] = useState(match?.minute || 78);
+  const [btHeat, setBtHeat] = useState(match?.heat_score ? Math.round(match.heat_score) : 74);
+  const [btProb, setBtProb] = useState(match?.poisson?.prob_goal || 68);
   const [btOdds, setBtOdds] = useState(1.88);
   const [btOut, setBtOut] = useState('');
 
@@ -1211,9 +1214,16 @@ function EVScanner({ onClose }) {
     <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#fff", zIndex: 1000, overflow: "auto", maxWidth: 480, margin: "0 auto" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "2px solid #f0f0f0", position: "sticky", top: 0, background: "#fff", zIndex: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
           <span style={{ fontSize: 20 }}>📊</span>
-          <span style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>EV Scanner</span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#111" }}>EV Scanner</div>
+            {hasMatch && (
+              <div style={{ fontSize: 12, color: "#888", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {match.home?.name} vs {match.away?.name} · {match.minute}′
+              </div>
+            )}
+          </div>
         </div>
         <button onClick={onClose} style={{ background: "#f0f0f0", border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "#555" }}>✕ Close</button>
       </div>
@@ -1230,6 +1240,23 @@ function EVScanner({ onClose }) {
         {/* POISSON TAB */}
         {tab === 'poisson' && (
           <div>
+            {/* Live game context banner */}
+            {hasMatch && (
+              <div style={{ background: "#e3f2fd", border: "1.5px solid #90caf9", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1565c0", marginBottom: 4 }}>
+                  🔴 Live data auto-loaded — {match.home?.name} {match.home?.goals} – {match.away?.goals} {match.away?.name}
+                </div>
+                <div style={{ fontSize: 12, color: "#1976d2" }}>
+                  Minute: {match.minute}′ · Heat: {Math.round(match.heat_score)} · 
+                  {match.poisson ? ` xG remaining: ${match.poisson.total_xg} · Model prob: ${match.poisson.prob_goal}%` : ' No xG data (standings unavailable for this league)'}
+                </div>
+                {match.home?.motivation?.tag && (
+                  <div style={{ fontSize: 11, marginTop: 4, color: "#555" }}>
+                    {match.home.name}: {match.home.motivation.tag.text} · {match.away.name}: {match.away?.motivation?.tag?.text || match.away?.motivation?.label}
+                  </div>
+                )}
+              </div>
+            )}
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
               {[['Home xG', xH.toFixed(2)],['Away xG', xA.toFixed(2)],['Goal prob', Math.round(probGoal*100)+'%'],['Market*', '54%']].map(([l,v]) => (
                 <div key={l} style={metCard}><div style={metLabel}>{l}</div><div style={{...metVal, color: l==='Goal prob' ? (probGoal>0.6?"#2e7d32":probGoal>0.4?"#e65100":"#555") : "#111"}}>{v}</div></div>
@@ -1477,7 +1504,7 @@ export default function App() {
   const [showFavsOnly, setShowFavsOnly] = useState(false);
   const [fanduelGames, setFanduelGames] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState('');
-  const [showEV, setShowEV] = useState(false);
+  const [evMatch, setEvMatch] = useState(null); // null = closed, match object = open
   const [searchFocused, setSearchFocused] = useState(false);
 
   const [alertThreshold, setAlertThreshold] = useState(() => {
@@ -1654,7 +1681,7 @@ export default function App() {
         body { background: #f5f5f5; }
       `}</style>
 
-      {showEV && <EVScanner onClose={() => setShowEV(false)} />}
+      {evMatch !== null && <EVScanner match={evMatch} onClose={() => setEvMatch(null)} />}
       {showAlertPanel && <AlertPanel threshold={alertThreshold} onChange={v => {
                 setAlertThreshold(v);
                 try { localStorage.setItem('mt_threshold', String(v)); } catch {}
@@ -1683,7 +1710,7 @@ export default function App() {
               <button onClick={() => setFilterLive(true)} style={{ padding: "5px 10px", borderRadius: 18, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: filterLive ? "#e53935" : "transparent", color: filterLive ? "#fff" : "#aaa" }}>● LIVE</button>
             </div>
             {/* EV Scanner button */}
-            <button onClick={() => setShowEV(v => !v)} style={{ background: showEV ? "#1565c0" : "#fafafa", border: `1px solid ${showEV ? "#1565c0" : "#e0e0e0"}`, borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontSize: 12, fontWeight: 700, color: showEV ? "#fff" : "#555", whiteSpace: "nowrap" }}>
+            <button onClick={() => setEvMatch(evMatch ? null : {})} style={{ background: evMatch ? "#1565c0" : "#fafafa", border: `1px solid ${evMatch ? "#1565c0" : "#e0e0e0"}`, borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontSize: 12, fontWeight: 700, color: evMatch ? "#fff" : "#555", whiteSpace: "nowrap" }}>
               📊 EV
             </button>
             {/* Refresh */}
@@ -1899,6 +1926,7 @@ export default function App() {
                   onFavToggle={toggleFav}
                   isFanduel={fanduelGames.has(m.fixture_id)}
                   onFanduelToggle={toggleFanduel}
+                  onEVOpen={setEvMatch}
                 />
               ))}
             </div>
