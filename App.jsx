@@ -891,6 +891,11 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
             <Tooltip text={isFav ? "Remove from watchlist" : "Add to watchlist"}>
               <button onClick={e => { e.stopPropagation(); onFavToggle(m.fixture_id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: isFav ? "#f9a825" : "#ddd", padding: 0, lineHeight: 1 }}>★</button>
             </Tooltip>
+            {m.status !== "NS" && m.status !== "FT" && (
+              <Tooltip text="Open EV Scanner for this game — auto-fills with live data">
+                <button onClick={e => { e.stopPropagation(); onEVOpen && onEVOpen(m); }} style={{ background: "#e3f2fd", border: "1.5px solid #90caf9", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#1565c0", padding: "3px 6px", lineHeight: 1.2, marginTop: 2 }}>📊</button>
+              </Tooltip>
+            )}
 
           </div>
         </div>
