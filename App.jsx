@@ -1386,7 +1386,7 @@ function EVScanner({ onClose }) {
         {tab === 'backtest' && (
           <div>
             <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-              {[['Alerts',alerts.length],['Hit rate',hitRate!==null?hitRate+'%':'—'],['Avg heat',avgHeat||'—'],['Best win','80-93'']].map(([l,v]) => (
+              {[['Alerts',alerts.length],['Hit rate',hitRate!==null?hitRate+'%':'—'],['Avg heat',avgHeat||'—'],['Best win',"80-93'"]].map(([l,v]) => (
                 <div key={l} style={metCard}><div style={metLabel}>{l}</div><div style={{...metVal,fontSize:18}}>{v}</div></div>
               ))}
             </div>
