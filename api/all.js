@@ -21,6 +21,142 @@ const fixtureHistory = new Map();  // fixture_id → [{ score, ts }]
 const lastPolled     = new Map();  // fixture_id → timestamp
 const HISTORY_MAX    = 12;         // keep last 12 readings (~10 min at 50s avg)
 
+// ─── RATE LIMIT MANAGER ──────────────────────────────────────────────────────
+// Implements: Circuit Breaker + Exponential Backoff + Header Monitoring
+// Based on standard 429 handling patterns
+
+const rateLimitState = {
+  remaining: 999,          // X-RateLimit-Remaining
+  limit: 1000,             // X-RateLimit-Limit  
+  resetAt: null,           // X-RateLimit-Reset (epoch)
+  circuitOpen: false,      // true = stop all requests
+  circuitOpenAt: null,     // when circuit tripped
+  consecutiveFails: 0,     // for exponential backoff
+  lastBackoffMs: 0,        // current backoff duration
+  totalRequests: 0,        // session counter
+  throttledRequests: 0,    // how many were slowed
+};
+
+const CIRCUIT_RESET_MS   = 60_000;  // reopen circuit after 60s
+const RATE_LIMIT_WARN    = 0.10;    // warn when <10% remaining
+const RATE_LIMIT_SLOW    = 0.20;    // slow down when <20% remaining
+const MAX_BACKOFF_MS     = 32_000;  // max 32s backoff
+
+function parseRateLimitHeaders(headers) {
+  const remaining = parseInt(headers.get?.('x-ratelimit-remaining') || headers['x-ratelimit-remaining'] || '999');
+  const limit     = parseInt(headers.get?.('x-ratelimit-limit')     || headers['x-ratelimit-limit']     || '1000');
+  const resetAt   = parseInt(headers.get?.('x-ratelimit-reset')     || headers['x-ratelimit-reset']     || '0');
+  const retryAfter = parseInt(headers.get?.('retry-after')          || headers['retry-after']           || '0');
+
+  if (!isNaN(remaining)) rateLimitState.remaining = remaining;
+  if (!isNaN(limit))     rateLimitState.limit     = limit;
+  if (!isNaN(resetAt))   rateLimitState.resetAt   = resetAt * 1000; // to ms
+
+  const pctLeft = rateLimitState.remaining / rateLimitState.limit;
+
+  if (pctLeft < RATE_LIMIT_WARN) {
+    console.warn(`[RateLimit] ⚠️ Only ${rateLimitState.remaining}/${rateLimitState.limit} requests left (${Math.round(pctLeft*100)}%)`);
+  }
+
+  return { remaining, limit, resetAt, retryAfter, pctLeft };
+}
+
+function isCircuitOpen() {
+  if (!rateLimitState.circuitOpen) return false;
+  // Auto-reset circuit after CIRCUIT_RESET_MS
+  if (Date.now() - rateLimitState.circuitOpenAt > CIRCUIT_RESET_MS) {
+    console.log('[RateLimit] ⚡ Circuit breaker reset — resuming requests');
+    rateLimitState.circuitOpen = false;
+    rateLimitState.consecutiveFails = 0;
+    rateLimitState.lastBackoffMs = 0;
+    return false;
+  }
+  return true;
+}
+
+function tripCircuit() {
+  rateLimitState.circuitOpen = true;
+  rateLimitState.circuitOpenAt = Date.now();
+  console.error('[RateLimit] 🔴 Circuit breaker TRIPPED — pausing all API requests for 60s');
+}
+
+function calcBackoff() {
+  // Exponential backoff with jitter
+  // 1s → 2s → 4s → 8s → 16s → 32s max
+  const base = Math.min(MAX_BACKOFF_MS, 1000 * Math.pow(2, rateLimitState.consecutiveFails));
+  const jitter = Math.random() * 1000; // up to 1s random jitter
+  return base + jitter;
+}
+
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Resilient fetch with: circuit breaker + 429 handling + backoff + header monitoring
+async function fetchWithRateLimit(url, options = {}, maxRetries = 3) {
+  rateLimitState.totalRequests++;
+
+  // Circuit breaker check
+  if (isCircuitOpen()) {
+    const msUntilReset = CIRCUIT_RESET_MS - (Date.now() - rateLimitState.circuitOpenAt);
+    throw new Error(`Circuit breaker open — retry in ${Math.round(msUntilReset/1000)}s`);
+  }
+
+  // Proactive slowdown if near rate limit
+  const pctLeft = rateLimitState.remaining / rateLimitState.limit;
+  if (pctLeft < RATE_LIMIT_SLOW && pctLeft > RATE_LIMIT_WARN) {
+    const slowDelay = 500 + Math.random() * 500; // 0.5-1s delay
+    rateLimitState.throttledRequests++;
+    await sleep(slowDelay);
+  }
+
+  // If reset time is known and we're out, wait for reset
+  if (rateLimitState.remaining <= 0 && rateLimitState.resetAt) {
+    const waitMs = Math.max(0, rateLimitState.resetAt - Date.now()) + 1000;
+    console.log(`[RateLimit] Waiting ${Math.round(waitMs/1000)}s for rate limit reset`);
+    await sleep(waitMs);
+  }
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+
+      // Parse rate limit headers from every response
+      parseRateLimitHeaders(response.headers);
+
+      if (response.status === 429) {
+        rateLimitState.consecutiveFails++;
+
+        // Honor Retry-After header if provided
+        const retryAfter = parseInt(response.headers.get?.('retry-after') || '0');
+        const backoffMs = retryAfter > 0 ? retryAfter * 1000 : calcBackoff();
+        rateLimitState.lastBackoffMs = backoffMs;
+
+        console.warn(`[RateLimit] 429 received. Attempt ${attempt+1}/${maxRetries+1}. Backing off ${Math.round(backoffMs/1000)}s`);
+
+        if (attempt === maxRetries) {
+          tripCircuit();
+          throw new Error('Rate limit exceeded — circuit breaker tripped');
+        }
+
+        await sleep(backoffMs);
+        continue;
+      }
+
+      // Success — reset fail counter
+      rateLimitState.consecutiveFails = 0;
+      return response;
+
+    } catch (err) {
+      if (err.message.includes('Circuit breaker')) throw err;
+      if (attempt === maxRetries) throw err;
+      const backoffMs = calcBackoff();
+      console.warn(`[RateLimit] Network error attempt ${attempt+1}: ${err.message}. Retrying in ${Math.round(backoffMs/1000)}s`);
+      await sleep(backoffMs);
+    }
+  }
+}
+
 // ─── ADAPTIVE POLLING THRESHOLDS ─────────────────────────────────────────────
 const POLL_CRITICAL   = 15;   // seconds — Vila window or high heat
 const POLL_ELEVATED   = 30;   // seconds — moderate heat
@@ -395,9 +531,9 @@ export default async function handler(req, res) {
   try {
     // Step 1: Fetch live + finished + upcoming
     const [liveRes, finishedRes, upcomingRes] = await Promise.all([
-      fetch(`${BASE_URL}/fixtures?live=all`, { headers }),
-      fetch(`${BASE_URL}/fixtures?date=${today}&status=FT`, { headers }),
-      fetch(`${BASE_URL}/fixtures?date=${today}&status=NS`, { headers }),
+      fetchWithRateLimit(`${BASE_URL}/fixtures?live=all`, { headers }),
+      fetchWithRateLimit(`${BASE_URL}/fixtures?date=${today}&status=FT`, { headers }),
+      fetchWithRateLimit(`${BASE_URL}/fixtures?date=${today}&status=NS`, { headers }),
     ]);
     const [liveData, finishedData, upcomingData] = await Promise.all([
       liveRes.json(), finishedRes.json(), upcomingRes.json()
@@ -414,12 +550,12 @@ export default async function handler(req, res) {
     const standingsResults = await Promise.allSettled(
       liveLeagueIds.map(async lid => {
         try {
-          const r25 = await fetch(`${BASE_URL}/standings?league=${lid}&season=2025`,{headers});
-          const d25 = await r25.json();
+          const r25 = await fetchWithRateLimit(`${BASE_URL}/standings?league=${lid}&season=2025`,{headers}).catch(()=>null);
+          const d25 = r25 ? await r25.json() : {};
           const s25 = d25.response?.[0]?.league?.standings?.[0]||[];
           if (s25.length>0) return {lid,standings:s25};
-          const r24 = await fetch(`${BASE_URL}/standings?league=${lid}&season=2024`,{headers});
-          const d24 = await r24.json();
+          const r24 = await fetchWithRateLimit(`${BASE_URL}/standings?league=${lid}&season=2024`,{headers}).catch(()=>null);
+          const d24 = r24 ? await r24.json() : {};
           return {lid,standings:d24.response?.[0]?.league?.standings?.[0]||[]};
         } catch { return {lid,standings:[]}; }
       })
