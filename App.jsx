@@ -1528,6 +1528,7 @@ export default function App() {
   const [showFavsOnly, setShowFavsOnly] = useState(false);
   const [fanduelGames, setFanduelGames] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [rateLimit, setRateLimit] = useState(null);
   const [evMatch, setEvMatch] = useState(null); // null = closed, match object = open
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -1739,12 +1740,14 @@ export default function App() {
               <button onClick={() => setFilterLive(true)} style={{ padding: "5px 10px", borderRadius: 18, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: filterLive ? "#e53935" : "transparent", color: filterLive ? "#fff" : "#aaa" }}>● LIVE</button>
             </div>
 
+            {/* EV Scanner */}
+            <button onClick={() => setShowEV(v => !v)} style={{ background: showEV ? "#1565c0" : "#fafafa", border: `1px solid ${showEV ? "#1565c0" : "#e0e0e0"}`, borderRadius: 8, padding: "5px 9px", cursor: "pointer", fontSize: 12, fontWeight: 700, color: showEV ? "#fff" : "#555" }}>📊 EV</button>
             {/* Refresh */}
             <button onClick={load} style={{ background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 8, padding: "5px 8px", cursor: "pointer", fontSize: 13, fontFamily: "monospace", color: countdown < 10 ? "#f57c00" : "#aaa", display: "flex", alignItems: "center", gap: 3 }}>
               {loading ? <span style={{ display: "inline-block", width: 10, height: 10, border: "2px solid #e53935", borderTopColor: "transparent", borderRadius: "50%", animation: "spin .7s linear infinite" }} /> : "↻"} {countdown}s
             </button>
           </div>
-          {/* Row 2: Action buttons */}
+          {/* Row 2: Action buttons + API status */}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <button onClick={() => setShowFavsOnly(f => !f)} style={{ flex: 1, background: showFavsOnly ? "#fff8e1" : "#fafafa", border: `1px solid ${showFavsOnly ? "#f9a82566" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 6px", cursor: "pointer", fontSize: 13, fontWeight: 700, color: showFavsOnly ? "#f9a825" : "#777", textAlign: "center" }}>
               ★ Watchlist{favourites.size > 0 ? ` (${favourites.size})` : ""}
@@ -1772,6 +1775,16 @@ export default function App() {
                 <button onClick={() => setSearchQuery('')} style={{ position: "absolute", right: 8, background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#aaa", padding: 0, lineHeight: 1 }}>✕</button>
               )}
             </div>
+            {/* Rate limit indicator */}
+            {rateLimit && (
+              <span style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, padding: "3px 7px", borderRadius: 6, whiteSpace: "nowrap",
+                color: rateLimit.circuit_open ? "#c62828" : rateLimit.pct_left < 10 ? "#e65100" : rateLimit.pct_left < 20 ? "#f9a825" : "#43a047",
+                background: rateLimit.circuit_open ? "#ffebee" : rateLimit.pct_left < 10 ? "#fff3e0" : "#f9f9f9",
+                border: `1px solid ${rateLimit.circuit_open ? "#ef9a9a" : rateLimit.pct_left < 10 ? "#ffcc80" : "#e0e0e0"}`,
+              }}>
+                {rateLimit.circuit_open ? "🔴 PAUSED" : `API ${rateLimit.pct_left}%`}
+              </span>
+            )}
             <button onClick={() => setSoundEnabled(s => {
               const next = !s;
               try { localStorage.setItem('mt_sound', String(next)); } catch {}
