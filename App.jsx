@@ -304,6 +304,49 @@ function MatchDetail({ m }) {
   );
 }
 
+// ─── SPARKLINE CHART ─────────────────────────────────────────────────────────
+// Renders 90-minute momentum timeline as mini SVG sparkline
+// Shows momentum score history — spike = swing moment
+function Sparkline({ data = [], width = 80, height = 24, color = "#e53935" }) {
+  if (!data || data.length < 2) return null;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((v - min) / range) * height;
+    return `${x},${y}`;
+  }).join(" ");
+  const lastY = height - ((data[data.length-1] - min) / range) * height;
+  return (
+    <svg width={width} height={height} style={{ display: "block" }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={(data.length-1)/(data.length-1)*width} cy={lastY} r="2.5" fill={color} />
+    </svg>
+  );
+}
+
+// ─── FIELD TILT BAR ───────────────────────────────────────────────────────────
+function FieldTiltBar({ tilt, homeName, awayName }) {
+  if (!tilt) return null;
+  const { home: hT, away: aT, strength } = tilt;
+  const hColor = hT > aT ? "#1565c0" : "#e0e0e0";
+  const aColor = aT > hT ? "#e53935" : "#e0e0e0";
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#888", marginBottom: 3 }}>
+        <span style={{ fontWeight: hT > aT ? 700 : 400, color: hT > aT ? "#1565c0" : "#aaa" }}>{hT}%</span>
+        <span style={{ fontSize: 10, color: "#bbb" }}>Field Tilt</span>
+        <span style={{ fontWeight: aT > hT ? 700 : 400, color: aT > hT ? "#e53935" : "#aaa" }}>{aT}%</span>
+      </div>
+      <div style={{ height: 6, display: "flex", borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ width: `${hT}%`, background: hColor, transition: "width .6s" }} />
+        <div style={{ width: `${aT}%`, background: aColor, transition: "width .6s" }} />
+      </div>
+    </div>
+  );
+}
+
 // ─── FIRST HALF SCORE PREDICTOR ──────────────────────────────────────────────
 // Dedicated HT prediction using 1H-specific research:
 // - PerformanceOdds (2026): 70%+ of 1H goals in 35-45' window
@@ -996,6 +1039,43 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
                 {ht.reasons.map((r, i) => (
                   <span key={i} style={{ fontSize: 11, color: "#7b1fa2", background: "#e1bee7", borderRadius: 10, padding: "2px 7px" }}>{r}</span>
                 ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* SPARKLINE — momentum timeline */}
+        {m.status !== "NS" && m.status !== "FT" && m.timeline && m.timeline.length > 1 && (() => {
+          const adv = m.advanced;
+          const tiltDom = adv?.field_tilt?.dominant;
+          const tiltStr = adv?.field_tilt?.strength;
+          const homeXT  = adv?.xT?.home;
+          const awayXT  = adv?.xT?.away;
+          const swingAlert = adv?.swing_alert;
+          const sparkColor = m.heat_score >= 65 ? "#e53935" : m.heat_score >= 40 ? "#f57c00" : "#1565c0";
+          return (
+            <div style={{ marginBottom: 6 }}>
+              {/* Field tilt bar */}
+              <FieldTiltBar tilt={adv?.field_tilt} homeName={m.home.name} awayName={m.away.name} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {/* Sparkline */}
+                <div style={{ flex: 1 }}>
+                  <Sparkline data={m.timeline} width={120} height={20} color={sparkColor} />
+                </div>
+                {/* xT */}
+                {homeXT !== undefined && (
+                  <div style={{ display: "flex", gap: 6, fontSize: 11, color: "#888" }}>
+                    <span style={{ fontWeight: homeXT > awayXT ? 700 : 400, color: homeXT > awayXT ? "#1565c0" : "#aaa" }}>xT {homeXT}</span>
+                    <span style={{ color: "#ddd" }}>|</span>
+                    <span style={{ fontWeight: awayXT > homeXT ? 700 : 400, color: awayXT > homeXT ? "#e53935" : "#aaa" }}>{awayXT} xT</span>
+                  </div>
+                )}
+                {/* Swing alert */}
+                {swingAlert && (
+                  <span style={{ fontSize: 10, background: "#fff3e0", color: "#e65100", border: "1px solid #ffcc80", borderRadius: 8, padding: "2px 7px", fontWeight: 700, whiteSpace: "nowrap" }}>
+                    ⚡ Momentum shift
+                  </span>
+                )}
               </div>
             </div>
           );
