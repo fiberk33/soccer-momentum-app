@@ -1720,14 +1720,14 @@ export default function App() {
 
         {/* Title bar — mobile optimized */}
         <div style={{ padding: "8px 12px", borderBottom: "1px solid #f0f0f0" }}>
-          {/* Row 1: Logo + Live toggle + Refresh */}
+          {/* Row 1: Logo + ALL/LIVE + Refresh */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-            <span style={{ fontSize: 22 }}>⚽</span>
-            <span style={{ fontSize: 18, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
+            <span style={{ fontSize: 20 }}>⚽</span>
+            <span style={{ fontSize: 17, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
               Momentum<span style={{ color: "#e53935" }}>Track</span>
             </span>
             {extremeCount > 0 && (
-              <span style={{ fontSize: 12, background: "#e53935", color: "#fff", borderRadius: 10, padding: "3px 8px", fontWeight: 700, animation: "blink 1.5s infinite" }}>
+              <span style={{ fontSize: 11, background: "#e53935", color: "#fff", borderRadius: 10, padding: "2px 7px", fontWeight: 700, animation: "blink 1.5s infinite" }}>
                 {extremeCount} 🔥
               </span>
             )}
@@ -1737,61 +1737,55 @@ export default function App() {
               <button onClick={() => setFilterLive(false)} style={{ padding: "5px 10px", borderRadius: 18, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: !filterLive ? "#1565c0" : "transparent", color: !filterLive ? "#fff" : "#aaa" }}>ALL</button>
               <button onClick={() => setFilterLive(true)} style={{ padding: "5px 10px", borderRadius: 18, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, background: filterLive ? "#e53935" : "transparent", color: filterLive ? "#fff" : "#aaa" }}>● LIVE</button>
             </div>
-
-            {/* EV Scanner */}
-            <button onClick={() => setShowEV(v => !v)} style={{ background: showEV ? "#1565c0" : "#fafafa", border: `1px solid ${showEV ? "#1565c0" : "#e0e0e0"}`, borderRadius: 8, padding: "5px 9px", cursor: "pointer", fontSize: 12, fontWeight: 700, color: showEV ? "#fff" : "#555" }}>📊 EV</button>
             {/* Refresh */}
             <button onClick={load} style={{ background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 8, padding: "5px 8px", cursor: "pointer", fontSize: 13, fontFamily: "monospace", color: countdown < 10 ? "#f57c00" : "#aaa", display: "flex", alignItems: "center", gap: 3 }}>
               {loading ? <span style={{ display: "inline-block", width: 10, height: 10, border: "2px solid #e53935", borderTopColor: "transparent", borderRadius: "50%", animation: "spin .7s linear infinite" }} /> : "↻"} {countdown}s
             </button>
           </div>
-          {/* Row 2: Action buttons + API status */}
+          {/* Row 2: Action buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <button onClick={() => setShowFavsOnly(f => !f)} style={{ flex: 1, background: showFavsOnly ? "#fff8e1" : "#fafafa", border: `1px solid ${showFavsOnly ? "#f9a82566" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 6px", cursor: "pointer", fontSize: 13, fontWeight: 700, color: showFavsOnly ? "#f9a825" : "#777", textAlign: "center" }}>
-              ★ Watchlist{favourites.size > 0 ? ` (${favourites.size})` : ""}
+            {/* Watchlist */}
+            <button onClick={() => setShowFavsOnly(f => !f)} style={{ background: showFavsOnly ? "#fff8e1" : "#fafafa", border: `1px solid ${showFavsOnly ? "#f9a82566" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 8px", cursor: "pointer", fontSize: 13, fontWeight: 700, color: showFavsOnly ? "#f9a825" : "#777", whiteSpace: "nowrap" }}>
+              ★{favourites.size > 0 ? ` ${favourites.size}` : ""}
             </button>
             {/* Search bar */}
             <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center" }}>
-              <span style={{ position: "absolute", left: 10, fontSize: 14, color: "#aaa", pointerEvents: "none" }}>🔍</span>
+              <span style={{ position: "absolute", left: 8, fontSize: 13, color: "#aaa", pointerEvents: "none" }}>🔍</span>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setSearchFocused(false)}
-                placeholder="Search team or league..."
-                style={{
-                  width: "100%", padding: "8px 32px 8px 32px",
-                  border: `1.5px solid ${searchFocused ? "#1565c0" : "#e0e0e0"}`,
-                  borderRadius: 8, fontSize: 13, color: "#333",
-                  background: "#fff", outline: "none",
-                  boxSizing: "border-box",
-                  transition: "border-color .2s",
-                }}
+                placeholder="Search..."
+                style={{ width: "100%", padding: "7px 28px 7px 28px", border: `1.5px solid ${searchFocused ? "#1565c0" : "#e0e0e0"}`, borderRadius: 8, fontSize: 13, color: "#333", background: "#fff", outline: "none", boxSizing: "border-box" }}
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')} style={{ position: "absolute", right: 8, background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#aaa", padding: 0, lineHeight: 1 }}>✕</button>
+                <button onClick={() => setSearchQuery('')} style={{ position: "absolute", right: 6, background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "#aaa", padding: 0 }}>✕</button>
               )}
             </div>
-            {/* Rate limit indicator */}
-            {rateLimit && (
-              <span style={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, padding: "3px 7px", borderRadius: 6, whiteSpace: "nowrap",
-                color: rateLimit.circuit_open ? "#c62828" : rateLimit.pct_left < 10 ? "#e65100" : rateLimit.pct_left < 20 ? "#f9a825" : "#43a047",
-                background: rateLimit.circuit_open ? "#ffebee" : rateLimit.pct_left < 10 ? "#fff3e0" : "#f9f9f9",
-                border: `1px solid ${rateLimit.circuit_open ? "#ef9a9a" : rateLimit.pct_left < 10 ? "#ffcc80" : "#e0e0e0"}`,
-              }}>
-                {rateLimit.circuit_open ? "🔴 PAUSED" : `API ${rateLimit.pct_left}%`}
-              </span>
-            )}
+            {/* 📊 EV Scanner — prominent blue button */}
+            <button
+              onClick={() => setShowEV(v => !v)}
+              style={{
+                background: showEV ? "#1565c0" : "#1565c0",
+                border: "none", borderRadius: 8,
+                padding: "7px 12px", cursor: "pointer",
+                fontSize: 13, fontWeight: 800,
+                color: "#fff", whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >📊 EV</button>
+            {/* Sound */}
             <button onClick={() => setSoundEnabled(s => {
               const next = !s;
               try { localStorage.setItem('mt_sound', String(next)); } catch {}
               return next;
-            })} style={{ background: soundEnabled ? "#e8f5e9" : "#fafafa", border: `1px solid ${soundEnabled ? "#a5d6a7" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 16 }}>
+            })} style={{ background: soundEnabled ? "#e8f5e9" : "#fafafa", border: `1px solid ${soundEnabled ? "#a5d6a7" : "#e0e0e0"}`, borderRadius: 8, padding: "7px 8px", cursor: "pointer", fontSize: 15, flexShrink: 0 }}>
               {soundEnabled ? "🔊" : "🔇"}
             </button>
-            <button onClick={() => setShowAlertPanel(true)} style={{ background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 16 }}>🔔</button>
-          </div>
+            {/* Alert */}
+            <button onClick={() => setShowAlertPanel(true)} style={{ background: "#fafafa", border: "1px solid #e0e0e0", borderRadius: 8, padding: "7px 8px", cursor: "pointer", fontSize: 15, flexShrink: 0 }}>🔔</button>
         </div>
 
         {/* Error banners */}
