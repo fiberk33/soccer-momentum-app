@@ -433,6 +433,66 @@ function computeUrgency(home, away, minute, history) {
   };
 }
 
+// ─── ADVANCED METRICS ENGINE ─────────────────────────────────────────────────
+// xT proxy, Field Tilt, Progressive Passing, Momentum Score (M)
+// Based on: Karun Singh (2018) xT, Opta field tilt, StatsBomb research
+
+const W_ATK=0.5, W_DA=2.0, W_SOT=4.0, W_COR=1.5, W_YEL=-0.5;
+
+function calcMomentumScore(team, opp, minute) {
+  const m=Math.max(1,minute);
+  const atkRate=(team.dangerous_attacks||0)/m*90;
+  const sotRate=(team.shots_on_target||0)/m*90;
+  const cornRate=(team.corners||0)/m*90;
+  const oppAtk=(opp.dangerous_attacks||0)/m*90;
+  const M=W_ATK*atkRate+W_DA*atkRate*0.4+W_SOT*sotRate+W_COR*cornRate+W_YEL*(team.yellow_cards||0)-W_ATK*oppAtk*0.3;
+  return Math.round(Math.max(0,M)*10)/10;
+}
+
+function calcFieldTilt(home, away) {
+  const hA=(home.dangerous_attacks||0)+(home.shots_on_target||0)*2+(home.corners||0);
+  const aA=(away.dangerous_attacks||0)+(away.shots_on_target||0)*2+(away.corners||0);
+  const tot=hA+aA;
+  if(!tot) return {home:50,away:50,dominant:null,strength:"neutral",maxTilt:50};
+  const hT=Math.round(hA/tot*100), aT=100-hT;
+  const dom=hT>=aT?"home":"away", mx=Math.max(hT,aT);
+  const str=mx>=70?"dominant":mx>=60?"strong":mx>=55?"slight":"neutral";
+  return {home:hT,away:aT,dominant:dom,strength:str,maxTilt:mx};
+}
+
+function calcXThreat(team, minute) {
+  const tf=Math.max(1,minute)/90;
+  const xT=((team.shots_on_target||0)*0.35+(team.dangerous_attacks||0)*0.08+(team.corners||0)*0.04)/tf;
+  return Math.round(xT*100)/100;
+}
+
+function calcPressingIntensity(team, opp, minute) {
+  const m=Math.max(1,minute);
+  const atkRate=(team.dangerous_attacks||0)/m*90;
+  const p=Math.min(10,(atkRate*0.15)+((team.yellow_cards||0)*0.5)+((team.corners||0)*0.2));
+  return Math.round(p*10)/10;
+}
+
+function calcAdvancedMetrics(home, away, minute) {
+  const homeM=calcMomentumScore(home,away,minute);
+  const awayM=calcMomentumScore(away,home,minute);
+  const tilt=calcFieldTilt(home,away);
+  const homeXT=calcXThreat(home,minute);
+  const awayXT=calcXThreat(away,minute);
+  const homePress=calcPressingIntensity(home,away,minute);
+  const awayPress=calcPressingIntensity(away,home,minute);
+  const xtDom=homeXT>=awayXT?"home":"away";
+  const shift=(xtDom==="home"&&awayPress>homePress+2)||(xtDom==="away"&&homePress>awayPress+2);
+  return {
+    momentum:{home:homeM,away:awayM,leader:homeM>=awayM?"home":"away"},
+    field_tilt:tilt,
+    xT:{home:homeXT,away:awayXT,dominant:xtDom},
+    pressing:{home:homePress,away:awayPress},
+    momentum_shift:shift,
+    swing_alert:shift&&minute>=60,
+  };
+}
+
 // ─── MOTIVATION INDEX ──────────────────────────────────────────────────────────
 function computeMotivationIndex(standing, leagueSize) {
   if (!standing) return null;
@@ -699,6 +759,7 @@ export default async function handler(req, res) {
 
       // ── RUN URGENCY ENGINE ──────────────────────────────────────────────
       const urgency = computeUrgency(home, away, minute, []);
+      const advanced = calcAdvancedMetrics(home, away, minute);
 
       // ── MOMENTUM DELTA ──────────────────────────────────────────────────
       const momentumDelta = calcMomentumDelta(fid, urgency.urgency_score);
@@ -743,6 +804,7 @@ export default async function handler(req, res) {
           confidence_boost: triggerValidation.confidenceBoost,
         },
         poll_interval: pollInterval,
+        advanced,
         poisson: homeXg !== null ? {
           home_xg: Math.round(homeXg*100)/100,
           away_xg: Math.round(awayXg*100)/100,
