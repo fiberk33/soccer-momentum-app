@@ -1216,7 +1216,7 @@ function AlertPanel({ threshold, onChange, onClose }) {
 // ─── EV SCANNER COMPONENT ────────────────────────────────────────────────────
 // Fully automatic — reads all data from the live match, no manual input needed
 
-function EVScanner({ match, onClose }) {
+function EVScanner({ onClose }) {
   const [tab, setTab] = useState('result');
   const [btMatch, setBtMatch] = useState(match?.home?.name && match?.away?.name ? `${match.home.name} vs ${match.away.name}` : '');
   const [btOdds, setBtOdds] = useState(1.85);
@@ -1610,6 +1610,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [rateLimit, setRateLimit] = useState(null);
   const [evMatch, setEvMatch] = useState(null); // null = closed, match object = open
+  const [showEV, setShowEV] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
 
   const [alertThreshold, setAlertThreshold] = useState(() => {
@@ -1791,7 +1792,7 @@ export default function App() {
         body { background: #f5f5f5; }
       `}</style>
 
-      {evMatch !== null && <EVScanner match={evMatch} onClose={() => setEvMatch(null)} />}
+      {showEV && <EVScanner onClose={() => setShowEV(false)} />}
       {showAlertPanel && <AlertPanel threshold={alertThreshold} onChange={v => {
                 setAlertThreshold(v);
                 try { localStorage.setItem('mt_threshold', String(v)); } catch {}
