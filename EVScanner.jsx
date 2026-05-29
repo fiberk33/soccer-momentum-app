@@ -376,3 +376,5 @@ export default function EVScanner({ onClose, match }) {
     </div>
   );
 }
+
+export default EVScanner;
