@@ -971,17 +971,6 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
   );
   })()}
 
-  {/* FULL-WIDTH EV BUTTON */}
-  {m.status !== "NS" && m.status !== "FT" && (
-  <button
-    onClick={e => { e.stopPropagation(); onEVOpen && onEVOpen(m); }}
-    style={{ width: "100%", background: "#1565c0", border: "none", borderRadius: 8, padding: "11px", cursor: "pointer", fontSize: 14, fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}
-  >
-    <span>📊</span>
-    <span>Check EV for this game</span>
-  </button>
-  )}
-
   {/* FIRST HALF PREDICTOR — only shows during 1H */}
   {m.status === "1H" && (() => {
   const ht = calcHalfTimeScore(m);
@@ -1479,7 +1468,7 @@ export default function App() {
   <button
   onClick={() => setEvMatch({})}
   style={{
-  background: showEV ? "#1565c0" : "#1565c0",
+  background: "#1565c0",
   border: "none", borderRadius: 8,
   padding: "7px 12px", cursor: "pointer",
   fontSize: 13, fontWeight: 800,
