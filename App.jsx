@@ -1228,7 +1228,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [rateLimit, setRateLimit] = useState(null);
   const [evMatch, setEvMatch] = useState(null); // null = closed, match object = open
-  const [showEV, setShowEV] = useState(false);
+  const [evMatch, setEvMatch] = useState(null); // null=closed, match=open
   const [searchFocused, setSearchFocused] = useState(false);
 
   const [alertThreshold, setAlertThreshold] = useState(() => {
@@ -1409,7 +1409,7 @@ export default function App() {
   body { background: #f5f5f5; }
   `}</style>
 
-  {showEV && <EVScanner onClose={() => setShowEV(false)} />}
+  {evMatch !== null && evMatch !== undefined && <EVScanner match={evMatch || {}} onClose={() => setEvMatch(null)} />}
   {showAlertPanel && <AlertPanel threshold={alertThreshold} onChange={v => {
   setAlertThreshold(v);
   try { localStorage.setItem('mt_threshold', String(v)); } catch {}
@@ -1466,7 +1466,7 @@ export default function App() {
   </div>
   {/* 📊 EV Scanner — prominent blue button */}
   <button
-  onClick={() => setShowEV(v => !v)}
+  onClick={() => setEvMatch({})}
   style={{
   background: showEV ? "#1565c0" : "#1565c0",
   border: "none", borderRadius: 8,
