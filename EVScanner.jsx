@@ -377,4 +377,3 @@ export default function EVScanner({ onClose, match }) {
   );
 }
 
-export default EVScanner;
