@@ -6,21 +6,20 @@ import { useState } from "react";
 export default function EVScanner({ onClose, match }) {
 
   // ── PRE-FILL FROM MATCH ────────────────────────────────────────────────────
-  const hasMatch = match && match.fixture_id;
+  // Safe match extraction - never crash if match is empty/null
+  const hasMatch = !!(match && match.fixture_id);
   const minute   = match?.minute || 0;
-  const hg       = match?.home?.goals || 0;
-  const ag       = match?.away?.goals || 0;
-  const heat     = match?.heat_score || 0;
+  const hg       = match?.home?.goals ?? 0;
+  const ag       = match?.away?.goals ?? 0;
+  const heat     = match?.heat_score || match?.urgency_score || 0;
   const probPct  = match?.poisson?.prob_goal || 0;
   const homeName = match?.home?.name || "Home";
   const awayName = match?.away?.name || "Away";
-  const homeMot  = match?.home?.motivation?.score || 5;
-  const awayMot  = match?.away?.motivation?.score || 5;
+  const homeMot  = match?.home?.motivation?.score ?? 5;
+  const awayMot  = match?.away?.motivation?.score ?? 5;
   const trend    = match?.momentum?.trend || "stable";
   const rising   = match?.momentum?.rising || false;
-  const tilt     = match?.advanced?.field_tilt;
-  const xT       = match?.advanced?.xT;
-  const deadGame = match?.breakdown?.dead_score >= 6;
+  const deadGame = !!(match?.breakdown && (match.breakdown.dead_score || 0) >= 6);
 
   // ── TABS ───────────────────────────────────────────────────────────────────
   const [tab, setTab] = useState(hasMatch ? 'verdict' : 'poisson');
@@ -78,12 +77,14 @@ export default function EVScanner({ onClose, match }) {
 
   // ── SIMPLE VERDICT (3 indicators) ─────────────────────────────────────────
   // Indicator 1: Pressure (Heat Score)
+  // Use myProb slider if no live data
+  const effectiveProb = probPct > 0 ? probPct : myProb;
   const pressureOK = heat >= 55;
   const pressureScore = Math.min(10, Math.round(heat/10));
 
   // Indicator 2: Goal Probability
-  const probOK = probPct >= 55 || myProb >= 55;
-  const probScore = Math.round((probPct || myProb)/10);
+  const probOK = effectiveProb >= 55;
+  const probScore = Math.min(10, Math.round(effectiveProb/10));
 
   // Indicator 3: Motivation match state
   const maxMot = Math.max(homeMot, awayMot);
