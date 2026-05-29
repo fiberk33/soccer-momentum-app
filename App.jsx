@@ -901,9 +901,10 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
   <button onClick={e => { e.stopPropagation(); onFavToggle(m.fixture_id); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: isFav ? "#f9a825" : "#ddd", padding: 0, lineHeight: 1 }}>★</button>
   </Tooltip>
   {m.status !== "NS" && m.status !== "FT" && (
-  <Tooltip text="Open EV Scanner for this game — auto-fills with live data">
-  <button onClick={e => { e.stopPropagation(); onEVOpen && onEVOpen(m); }} style={{ background: "#e3f2fd", border: "1.5px solid #90caf9", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#1565c0", padding: "3px 6px", lineHeight: 1.2, marginTop: 2 }}>📊</button>
-  </Tooltip>
+  <button onClick={e => { e.stopPropagation(); onEVOpen && onEVOpen(m); }}
+    style={{ background: "#1565c0", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 10, fontWeight: 800, color: "#fff", padding: "4px 7px", lineHeight: 1.4 }}>
+    EV
+  </button>
   )}
 
   </div>
@@ -969,6 +970,17 @@ function MatchRow({ m, expanded, onToggle, isFav, onFavToggle, isFanduel, onFand
   </div>
   );
   })()}
+
+  {/* FULL-WIDTH EV BUTTON */}
+  {m.status !== "NS" && m.status !== "FT" && (
+  <button
+    onClick={e => { e.stopPropagation(); onEVOpen && onEVOpen(m); }}
+    style={{ width: "100%", background: "#1565c0", border: "none", borderRadius: 8, padding: "11px", cursor: "pointer", fontSize: 14, fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}
+  >
+    <span>📊</span>
+    <span>Check EV for this game</span>
+  </button>
+  )}
 
   {/* FIRST HALF PREDICTOR — only shows during 1H */}
   {m.status === "1H" && (() => {
