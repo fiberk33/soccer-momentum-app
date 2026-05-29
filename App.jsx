@@ -1227,7 +1227,6 @@ export default function App() {
   const [fanduelGames, setFanduelGames] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [rateLimit, setRateLimit] = useState(null);
-  const [evMatch, setEvMatch] = useState(null); // null = closed, match object = open
   const [evMatch, setEvMatch] = useState(null); // null=closed, match=open
   const [searchFocused, setSearchFocused] = useState(false);
 
